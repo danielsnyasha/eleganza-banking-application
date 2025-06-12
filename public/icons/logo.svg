@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="topHalf">
+      <rect x="0" y="0" width="64" height="32"/>
+    </clipPath>
+  </defs>
+  <!-- Bottom half: blue -->
+  <circle cx="32" cy="32" r="28" fill="#0088FF"/>
+  <!-- Top half: vibrant coral-peach -->
+  <circle cx="32" cy="32" r="28" fill="#FF5A5F" clip-path="url(#topHalf)"/>
+</svg>
