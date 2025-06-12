@@ -43,6 +43,24 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+.custom-range-picker .react-datepicker__day--in-selecting-range,
+.custom-range-picker .react-datepicker__day--in-range {
+  background: linear-gradient(to right, #bdbdbd 30%, #222 100%) !important;
+  color: white !important;
+  border-radius: 0 !important;
+}
+.custom-range-picker .react-datepicker__day--range-start {
+  background: #888 !important;
+  color: #fff !important;
+  border-radius: 16px 0 0 16px !important;
+}
+.custom-range-picker .react-datepicker__day--range-end {
+  background: #111 !important;
+  color: #fff !important;
+  border-radius: 0 16px 16px 0 !important;
+}
+
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
