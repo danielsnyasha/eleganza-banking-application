@@ -29,6 +29,11 @@ import * as z from 'zod';
 import { useVerificationStatus, useOnboard } from '@/hooks/useVerification';
 import { create } from 'zustand';
 
+/* ---------- toast (added) ---------- */
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+/* ----------------------------------- */
+
 /* -------------------------------------------------------------------------- */
 /* Zustand store for the verification phase                                   */
 /* -------------------------------------------------------------------------- */
@@ -76,6 +81,34 @@ export default function Verification() {
   /* Phase from zustand */
   const { phase, setPhase } = useVerificationStore();
 
+  /* -------------------------------- form init ---------------------------- */
+  const form = useForm<FormValues>({
+    resolver: zodResolver(Schema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      idType: 'national-id',
+      country: 'South Africa',
+    },
+  });
+
+  /* --------- inject Clerk info once available -------- */
+  useEffect(() => {
+    if (isLoaded && user) {
+      form.reset({
+        firstName: user.firstName ?? '',
+        lastName: user.lastName ?? '',
+        phone: user.phoneNumbers?.[0]?.phoneNumber ?? '',
+        email: user.primaryEmailAddress?.emailAddress ?? '',
+        idType: 'national-id',
+        country: 'South Africa',
+      });
+    }
+  }, [isLoaded, user, form]);
+  /* ---------------------------------------------------- */
+
   /* -------------------------------- check status ------------------------- */
   useEffect(() => {
     if (!isLoaded || isLoading) return;
@@ -83,28 +116,23 @@ export default function Verification() {
     else setPhase('fill');
   }, [isLoaded, isLoading, data, router, setPhase]);
 
-  /* -------------------------------- form init ---------------------------- */
-  const form = useForm<FormValues>({
-    resolver: zodResolver(Schema),
-    defaultValues: {
-      firstName: user?.firstName ?? '',
-      lastName: user?.lastName ?? '',
-      phone: user?.phoneNumbers?.[0]?.phoneNumber ?? '',
-      email: user?.primaryEmailAddress?.emailAddress ?? '',
-      idType: 'national-id',
-      country: 'South Africa',
-    },
-  });
-
   /* -------------------------------- submit ------------------------------- */
   async function onSubmit(values: FormValues) {
     try {
       setPhase('reviewing');
       await onboard.mutateAsync(values);
+      toast.success('Details submitted – pending manual review.', { autoClose: 4000 });
       setPhase('success');
-      await new Promise((r) => setTimeout(r, 1_500));
+      await new Promise((r) => setTimeout(r, 1500));
       router.replace('/banking');
-    } catch {
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+          ? err
+          : 'Submission failed. Please try again.';
+      toast.error(msg, { autoClose: 5000 });
       setPhase('fill');
     }
   }
@@ -361,6 +389,9 @@ export default function Verification() {
           </form>
         </Form>
       </main>
+
+      {/* toast container */}
+      <ToastContainer position="top-center" />
     </>
   );
 }

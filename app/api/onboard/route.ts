@@ -1,4 +1,3 @@
-// app/api/onboard/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUserId } from '@/lib/auth'
@@ -26,12 +25,11 @@ export async function POST(req: Request) {
   const body = await req.json()
   const data = Payload.parse(body)
 
-  // ← await here to get a string, not a Promise
-  const userId = await currentUserId()
+  const userId = await currentUserId() // This is the Clerk user ID
 
   await prisma.$transaction([
     prisma.user.update({
-      where: { id: userId },
+      where: { clerkId: userId },  // <--- change id to clerkId
       data: {
         firstName : data.firstName,
         lastName  : data.lastName,
@@ -42,8 +40,8 @@ export async function POST(req: Request) {
     }),
     prisma.securityEvent.create({
       data: {
-        userId,
-        eventType: 'TRANSFER_INITIATED', // audit example
+        userId, // This may need to be looked up if your SecurityEvent expects the Mongo id, not the clerkId!
+        eventType: 'TRANSFER_INITIATED',
         location : 'verification form',
       },
     }),

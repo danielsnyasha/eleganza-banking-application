@@ -164,8 +164,8 @@ enum HubType {
 
 // Core user (retail or business sign-in)
 model User {
-  id                String               @id @default(auto()) @map("_id") @db.ObjectId
-  clerkId   String  @unique   
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId  String   @unique               // <— new
   email             String               @unique
   phone             String?              @unique
   passwordHash      String

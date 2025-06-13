@@ -1,15 +1,15 @@
 // app/api/verification-status/route.ts
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { currentUserId } from '@/lib/auth'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { currentUserId } from '@/lib/auth';
 
 export async function GET() {
-  const userId = await currentUserId()         // ← await here
+  const clerkId = await currentUserId();
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { clerkId },               // no TS2353 error
     select: { kycStatus: true },
-  })
+  });
 
-  return NextResponse.json({ verified: user?.kycStatus === 'VERIFIED' })
+  return NextResponse.json({ verified: user?.kycStatus === 'VERIFIED' });
 }
