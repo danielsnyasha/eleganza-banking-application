@@ -23,16 +23,13 @@ import { Loader2Icon, CheckCircle2Icon } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, ControllerRenderProps } from 'react-hook-form';
 import * as z from 'zod';
 import { useVerificationStatus, useOnboard } from '@/hooks/useVerification';
 import { create } from 'zustand';
-
-/* ---------- toast (added) ---------- */
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-/* ----------------------------------- */
 
 /* -------------------------------------------------------------------------- */
 /* Zustand store for the verification phase                                   */
@@ -49,21 +46,21 @@ const useVerificationStore = create<State>((set) => ({
 /* Schema & types                                                             */
 /* -------------------------------------------------------------------------- */
 const Schema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  phone: z.string().min(8, 'Enter a valid phone number'),
-  email: z.string().email(),
-  idType: z.enum(['national-id', 'passport']),
-  idNumber: z.string().min(5, 'Required'),
+  firstName:  z.string().min(2),
+  lastName:   z.string().min(2),
+  phone:      z.string().min(8, 'Enter a valid phone number'),
+  email:      z.string().email(),
+  idType:     z.enum(['national-id', 'passport']),
+  idNumber:   z.string().min(5, 'Required'),
   profession: z.string().min(2),
-  dob: z.string().min(4, 'Required'),
-  address1: z.string().min(3),
-  address2: z.string().optional(),
-  city: z.string().min(2),
-  province: z.string().min(2),
+  dob:        z.string().min(4, 'Required'),
+  address1:   z.string().min(3),
+  address2:   z.string().optional(),
+  city:       z.string().min(2),
+  province:   z.string().min(2),
   postalCode: z.string().min(3),
-  country: z.string().min(2),
-  notes: z.string().optional(),
+  country:    z.string().min(2),
+  notes:      z.string().optional(),
 });
 type FormValues = z.infer<typeof Schema>;
 
@@ -72,58 +69,86 @@ type FormValues = z.infer<typeof Schema>;
 /* -------------------------------------------------------------------------- */
 export default function Verification() {
   const { user, isLoaded } = useUser();
-  const router = useRouter();
+  const router             = useRouter();
 
   /* TanStack hooks */
-  const { data, isLoading } = useVerificationStatus();
-  const onboard = useOnboard();
+  const { data, isLoading } = useVerificationStatus();   // <-- { submitted: boolean }
+  const onboard             = useOnboard();
 
   /* Phase from zustand */
   const { phase, setPhase } = useVerificationStore();
+
+  /* -------- timers ------------------------------------------------------- */
+  const [checkingSec , setCheckingSec ] = useState(5);   // initial 5-s gate
+  const [reviewingSec, setReviewingSec] = useState(10);  // 10-s banner
+
+  useEffect(() => {
+    if (phase !== 'checking') return;
+    const t = setInterval(() => setCheckingSec((s) => Math.max(s - 1, 0)), 1_000);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'reviewing') return;
+    const t = setInterval(() => setReviewingSec((s) => Math.max(s - 1, 0)), 1_000);
+    return () => clearInterval(t);
+  }, [phase]);
 
   /* -------------------------------- form init ---------------------------- */
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
     defaultValues: {
       firstName: '',
-      lastName: '',
-      phone: '',
-      email: '',
-      idType: 'national-id',
-      country: 'South Africa',
+      lastName : '',
+      phone    : '',
+      email    : '',
+      idType   : 'national-id',
+      country  : 'South Africa',
     },
   });
 
-  /* --------- inject Clerk info once available -------- */
+  /* inject Clerk info once ready */
   useEffect(() => {
     if (isLoaded && user) {
       form.reset({
         firstName: user.firstName ?? '',
-        lastName: user.lastName ?? '',
-        phone: user.phoneNumbers?.[0]?.phoneNumber ?? '',
-        email: user.primaryEmailAddress?.emailAddress ?? '',
-        idType: 'national-id',
-        country: 'South Africa',
+        lastName : user.lastName ?? '',
+        phone    : user.phoneNumbers?.[0]?.phoneNumber ?? '',
+        email    : user.primaryEmailAddress?.emailAddress ?? '',
+        idType   : 'national-id',
+        country  : 'South Africa',
       });
     }
   }, [isLoaded, user, form]);
-  /* ---------------------------------------------------- */
 
   /* -------------------------------- check status ------------------------- */
   useEffect(() => {
     if (!isLoaded || isLoading) return;
-    if (data?.verified) router.replace('/banking');
-    else setPhase('fill');
-  }, [isLoaded, isLoading, data, router, setPhase]);
+    if (checkingSec > 0) return;              // wait for 5-s gate
+
+    /* 🎯 NEW LOGIC → back-end “submitted” flag decides everything */
+    if (data?.submitted) {
+      router.replace('/banking');
+    } else {
+      setPhase('fill');
+    }
+  }, [isLoaded, isLoading, data, router, setPhase, checkingSec]);
 
   /* -------------------------------- submit ------------------------------- */
   async function onSubmit(values: FormValues) {
     try {
       setPhase('reviewing');
+      setReviewingSec(10);
       await onboard.mutateAsync(values);
-      toast.success('Details submitted – pending manual review.', { autoClose: 4000 });
+
+      toast.success('Details received — our automated checks are running.', {
+        autoClose: 4_000,
+      });
+
+      await new Promise((r) => setTimeout(r, 10_000));   // show full 10-s banner
       setPhase('success');
-      await new Promise((r) => setTimeout(r, 1500));
+
+      await new Promise((r) => setTimeout(r, 5_000));    // short green-tick pause
       router.replace('/banking');
     } catch (err: unknown) {
       const msg =
@@ -132,7 +157,7 @@ export default function Verification() {
           : typeof err === 'string'
           ? err
           : 'Submission failed. Please try again.';
-      toast.error(msg, { autoClose: 5000 });
+      toast.error(msg, { autoClose: 5_000 });
       setPhase('fill');
     }
   }
@@ -141,15 +166,21 @@ export default function Verification() {
   /* UI phases                                                               */
   /* ---------------------------------------------------------------------- */
   if (phase === 'checking' || isLoading) {
-    return <BannerLoader text="Wait while your profile is being verified…" />;
-  }
-  if (phase === 'reviewing') {
     return (
-      <BannerLoader text="Hang tight — Eleganza AI & our agents are reviewing your details…" />
+      <BannerLoader text={`🔍 Checking your session & profile … ${checkingSec}s`} />
     );
   }
+
+  if (phase === 'reviewing') {
+    return (
+      <BannerLoader text={`⚙️ Account being quickly verified … ${reviewingSec}s`} />
+    );
+  }
+
   if (phase === 'success') {
-    return <BannerSuccess text="Welcome to Eleganza Banking!" />;
+    return (
+      <BannerSuccess text="✅ Profile submitted — you’re being redirected to Eleganza Banking…" />
+    );
   }
 
   /* -------------------------------- form phase --------------------------- */
@@ -158,7 +189,9 @@ export default function Verification() {
       <VideoHeader />
 
       <main className="mx-auto max-w-5xl px-4 py-4 mb-10">
-        <h1 className="text-3xl font-bold mb-6 text-[#00a0ff]">Complete your profile</h1>
+        <h1 className="text-3xl font-bold mb-6 text-[#00a0ff]">
+          Complete your profile
+        </h1>
 
         <Form {...form}>
           <form
@@ -390,7 +423,6 @@ export default function Verification() {
         </Form>
       </main>
 
-      {/* toast container */}
       <ToastContainer position="top-center" />
     </>
   );
@@ -419,8 +451,8 @@ function BannerLoader({ text }: { text: string }) {
     <>
       <VideoHeader />
       <div className="flex flex-col items-center justify-center py-24 gap-6 text-white">
-        <Loader2Icon className="animate-spin w-10 h-10 text-[#00a0ff]" />
-        <p className="text-lg animate-pulse">{text}</p>
+        <Loader2Icon className="animate-spin w-12 h-12 text-[#00a0ff]" />
+        <p className="text-xl font-medium animate-pulse">{text}</p>
       </div>
     </>
   );
@@ -431,7 +463,7 @@ function BannerSuccess({ text }: { text: string }) {
     <>
       <VideoHeader />
       <div className="flex flex-col items-center justify-center py-24 gap-6 text-white">
-        <CheckCircle2Icon className="w-12 h-12 text-emerald-400" />
+        <CheckCircle2Icon className="w-14 h-14 text-emerald-400" />
         <p className="text-2xl font-semibold">{text}</p>
       </div>
     </>

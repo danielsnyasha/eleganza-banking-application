@@ -164,129 +164,140 @@ enum HubType {
 
 // Core user (retail or business sign-in)
 model User {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerkId  String   @unique               // <— new
-  email             String               @unique
-  phone             String?              @unique
-  passwordHash      String
-  firstName         String
-  lastName          String
-  dateOfBirth       DateTime?
-  kycStatus         KycStatus            @default(PENDING)
-  verified          Boolean              @default(false)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId      String?   @unique // ← now optional, but still kept for linking
+  email        String    @unique
+  phone        String?   @unique
+  passwordHash String
+  firstName   String
+  lastName    String
+     // 👇 add the new KYC columns
+  idType      String?
+  idNumber    String?
+  profession  String?
+  dob         DateTime?
+  address1    String?
+  address2    String?
+  city        String?
+  province    String?
+  postalCode  String?
+  country     String?
+  notes       String?
+  kycStatus   KycStatus @default(PENDING)
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  accounts          BankAccount[]
-  cards             Card[]
-  transactions      Transaction[]        @relation("UserTransactions")
-  forexTrades       ForexTrade[]
-  investments       Investment[]
-  securityEvents    SecurityEvent[]
-  securityConfig    SecuritySetting?
-  teamMembers       TeamMember[]
-  tokens            VerificationToken[]
-  beneficiaries     Beneficiary[]
-  businessAccounts  BusinessAccount[]
+  accounts         BankAccount[]
+  cards            Card[]
+  transactions     Transaction[]       @relation("UserTransactions")
+  forexTrades      ForexTrade[]
+  investments      Investment[]
+  securityEvents   SecurityEvent[]
+  securityConfig   SecuritySetting?
+  teamMembers      TeamMember[]
+  tokens           VerificationToken[]
+  beneficiaries    Beneficiary[]
+  businessAccounts BusinessAccount[]
 }
 
 // Token store (email / SMS verification, password reset, etc.)
 model VerificationToken {
   id         String                @id @default(auto()) @map("_id") @db.ObjectId
-  identifier String                // e.g. email or phone
+  identifier String // e.g. email or phone
   token      String
   type       VerificationTokenType
   expires    DateTime
   createdAt  DateTime              @default(now())
 
   // Relations
-  userId     String                @db.ObjectId
-  user       User                  @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 // Bank branches, ATMs, agencies, virtual hubs
 model BankingHub {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  code        String      @unique
-  type        HubType
-  timezone    String
-  address     String
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  code      String   @unique
+  type      HubType
+  timezone  String
+  address   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  accounts    BankAccount[]
-  staff       TeamMember[]
+  accounts BankAccount[]
+  staff    TeamMember[]
 }
 
 // Retail or business bank account (multicurrency supported)
 model BankAccount {
-  id               String          @id @default(auto()) @map("_id") @db.ObjectId
-  accountNumber    String          @unique
-  type             AccountType
-  currency         CurrencyCode
-  balance          Float           @default(0)
-  openedAt         DateTime        @default(now())
-  isActive         Boolean         @default(true)
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  accountNumber String       @unique
+  type          AccountType
+  currency      CurrencyCode
+  balance       Float        @default(0)
+  openedAt      DateTime     @default(now())
+  isActive      Boolean      @default(true)
 
   // Relations
-  ownerId          String          @db.ObjectId
-  owner            User            @relation(fields: [ownerId], references: [id])
+  ownerId String @db.ObjectId
+  owner   User   @relation(fields: [ownerId], references: [id])
 
-  hubId            String?         @db.ObjectId
-  hub              BankingHub?     @relation(fields: [hubId], references: [id])
+  hubId String?     @db.ObjectId
+  hub   BankingHub? @relation(fields: [hubId], references: [id])
 
-  businessId       String?         @db.ObjectId
-  business         BusinessAccount?@relation(fields: [businessId], references: [id])
+  businessId String?          @db.ObjectId
+  business   BusinessAccount? @relation(fields: [businessId], references: [id])
 
   cards            Card[]
-  transactionsFrom Transaction[]    @relation("FromAccount")
-  transactionsTo   Transaction[]    @relation("ToAccount")
+  transactionsFrom Transaction[] @relation("FromAccount")
+  transactionsTo   Transaction[] @relation("ToAccount")
   ledgerEntries    LedgerEntry[]
 }
 
 // Plastic or virtual payment card
 model Card {
-  id              String       @id @default(auto()) @map("_id") @db.ObjectId
-  cardNumber      String       @unique
-  cvvHash         String
-  expiryDate      DateTime
-  type            CardType
-  network         CardNetwork
-  status          CardStatus   @default(ACTIVE)
-  issuedAt        DateTime     @default(now())
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  cardNumber String      @unique
+  cvvHash    String
+  expiryDate DateTime
+  type       CardType
+  network    CardNetwork
+  status     CardStatus  @default(ACTIVE)
+  issuedAt   DateTime    @default(now())
 
   // Relations
-  accountId       String       @db.ObjectId
-  account         BankAccount  @relation(fields: [accountId], references: [id])
+  accountId String      @db.ObjectId
+  account   BankAccount @relation(fields: [accountId], references: [id])
 
-  ownerId         String       @db.ObjectId
-  owner           User         @relation(fields: [ownerId], references: [id])
+  ownerId String @db.ObjectId
+  owner   User   @relation(fields: [ownerId], references: [id])
 }
 
 // Every financial movement (single-entry view)
 model Transaction {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  reference       String            @unique
-  type            TransactionType
-  status          TransactionStatus @default(PENDING)
-  amount          Float
-  currency        CurrencyCode
-  note            String?
-  createdAt       DateTime          @default(now())
-  postedAt        DateTime?
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  reference String            @unique
+  type      TransactionType
+  status    TransactionStatus @default(PENDING)
+  amount    Float
+  currency  CurrencyCode
+  note      String?
+  createdAt DateTime          @default(now())
+  postedAt  DateTime?
 
   // Relations
-  userId          String            @db.ObjectId
-  user            User              @relation("UserTransactions", fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation("UserTransactions", fields: [userId], references: [id])
 
-  fromAccountId   String?           @db.ObjectId
-  fromAccount     BankAccount?      @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccountId String?      @db.ObjectId
+  fromAccount   BankAccount? @relation("FromAccount", fields: [fromAccountId], references: [id])
 
-  toAccountId     String?           @db.ObjectId
-  toAccount       BankAccount?      @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccountId String?      @db.ObjectId
+  toAccount   BankAccount? @relation("ToAccount", fields: [toAccountId], references: [id])
 
   forexTrade      ForexTrade?
   investment      Investment?
@@ -296,185 +307,185 @@ model Transaction {
 
 // Double-entry/ledger snapshot (so we can reconstruct balances quickly)
 model LedgerEntry {
-  id             String      @id @default(auto()) @map("_id") @db.ObjectId
-  accountId      String      @db.ObjectId
-  account        BankAccount @relation(fields: [accountId], references: [id])
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  accountId String      @db.ObjectId
+  account   BankAccount @relation(fields: [accountId], references: [id])
 
-  transactionId  String      @db.ObjectId
-  transaction    Transaction  @relation(fields: [transactionId], references: [id])
+  transactionId String      @db.ObjectId
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
-  amount         Float
-  balanceAfter   Float
-  createdAt      DateTime     @default(now())
+  amount       Float
+  balanceAfter Float
+  createdAt    DateTime @default(now())
 
   @@index([accountId, createdAt])
 }
 
 // External / beneficiary banks saved under “My Banks”
 model ExternalBank {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
   bankName      String
   swiftCode     String
   routingNumber String?
   country       String
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   beneficiaries Beneficiary[]
 }
 
 model Beneficiary {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  alias          String
-  accountName    String
-  accountNumber  String
-  currency       CurrencyCode
-  createdAt      DateTime      @default(now())
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  alias         String
+  accountName   String
+  accountNumber String
+  currency      CurrencyCode
+  createdAt     DateTime     @default(now())
 
   // Relations
-  userId         String        @db.ObjectId
-  user           User          @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 
-  externalBankId String        @db.ObjectId
-  externalBank   ExternalBank  @relation(fields: [externalBankId], references: [id])
+  externalBankId String       @db.ObjectId
+  externalBank   ExternalBank @relation(fields: [externalBankId], references: [id])
 
-  transfers      PaymentTransfer[]
+  transfers PaymentTransfer[]
 }
 
 // Outgoing / incoming payment orders (ACH/SWIFT/etc.)
 model PaymentTransfer {
-  id               String            @id @default(auto()) @map("_id") @db.ObjectId
-  amount           Float
-  currency         CurrencyCode
-  purpose          String?
-  fee              Float             @default(0)
-  status           TransactionStatus @default(PENDING)
-  scheduledFor     DateTime?
-  executedAt       DateTime?
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  amount       Float
+  currency     CurrencyCode
+  purpose      String?
+  fee          Float             @default(0)
+  status       TransactionStatus @default(PENDING)
+  scheduledFor DateTime?
+  executedAt   DateTime?
 
   // Relations
-  transactionId    String            @unique @db.ObjectId
-  transaction      Transaction       @relation(fields: [transactionId], references: [id])
+  transactionId String      @unique @db.ObjectId
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
-  beneficiaryId    String            @db.ObjectId
-  beneficiary      Beneficiary       @relation(fields: [beneficiaryId], references: [id])
+  beneficiaryId String      @db.ObjectId
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id])
 }
 
 // Foreign-exchange deal
 model ForexTrade {
-  id              String      @id @default(auto()) @map("_id") @db.ObjectId
-  fromCurrency    CurrencyCode
-  toCurrency      CurrencyCode
-  rate            Float
-  amountFrom      Float
-  amountTo        Float
-  fee             Float       @default(0)
-  status          ForexStatus @default(QUOTED)
-  createdAt       DateTime    @default(now())
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  fromCurrency CurrencyCode
+  toCurrency   CurrencyCode
+  rate         Float
+  amountFrom   Float
+  amountTo     Float
+  fee          Float        @default(0)
+  status       ForexStatus  @default(QUOTED)
+  createdAt    DateTime     @default(now())
 
   // Relations
-  userId          String      @db.ObjectId
-  user            User        @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 
-  transactionId   String?     @unique @db.ObjectId
-  transaction     Transaction?@relation(fields: [transactionId], references: [id])
+  transactionId String?      @unique @db.ObjectId
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
 }
 
 // Investment products offered by the bank
 model InvestmentProduct {
-  id              String              @id @default(auto()) @map("_id") @db.ObjectId
-  name            String
-  category        InvestmentCategory
-  currency        CurrencyCode
-  minimumAmount   Float
-  annualRatePct   Float
-  termDays        Int?
-  isActive        Boolean             @default(true)
-  createdAt       DateTime            @default(now())
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  category      InvestmentCategory
+  currency      CurrencyCode
+  minimumAmount Float
+  annualRatePct Float
+  termDays      Int?
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
 
-  investments     Investment[]
+  investments Investment[]
 }
 
 // Individual customer deal
 model Investment {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  amount          Float
-  currency        CurrencyCode
-  startDate       DateTime
-  maturityDate    DateTime?
-  status          InvestmentStatus  @default(OPEN)
-  createdAt       DateTime          @default(now())
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  amount       Float
+  currency     CurrencyCode
+  startDate    DateTime
+  maturityDate DateTime?
+  status       InvestmentStatus @default(OPEN)
+  createdAt    DateTime         @default(now())
 
   // Relations
-  userId          String            @db.ObjectId
-  user            User              @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 
-  productId       String            @db.ObjectId
-  product         InvestmentProduct @relation(fields: [productId], references: [id])
+  productId String            @db.ObjectId
+  product   InvestmentProduct @relation(fields: [productId], references: [id])
 
-  transactionId   String?           @unique @db.ObjectId
-  transaction     Transaction?      @relation(fields: [transactionId], references: [id])
+  transactionId String?      @unique @db.ObjectId
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
 }
 
 // Company / SME banking solutions (one business may own many accounts)
 model BusinessAccount {
-  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   entityName         String
-  registrationNumber String        @unique
+  registrationNumber String   @unique
   sector             String?
   country            String
-  openedAt           DateTime      @default(now())
-  isActive           Boolean       @default(true)
+  openedAt           DateTime @default(now())
+  isActive           Boolean  @default(true)
 
-  ownerId            String        @db.ObjectId
-  owner              User          @relation(fields: [ownerId], references: [id])
+  ownerId String @db.ObjectId
+  owner   User   @relation(fields: [ownerId], references: [id])
 
-  accounts           BankAccount[]
-  teamMembers        TeamMember[]
+  accounts    BankAccount[]
+  teamMembers TeamMember[]
 }
 
 // Staff & privilege mapping (for internal back-office or business teams)
 model TeamMember {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  role        TeamRole
-  joinedAt    DateTime    @default(now())
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  role     TeamRole
+  joinedAt DateTime @default(now())
 
   // Relations
-  userId      String      @db.ObjectId
-  user        User        @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 
-  businessId  String?     @db.ObjectId
-  business    BusinessAccount? @relation(fields: [businessId], references: [id])
+  businessId String?          @db.ObjectId
+  business   BusinessAccount? @relation(fields: [businessId], references: [id])
 
-  hubId       String?     @db.ObjectId
-  hub         BankingHub? @relation(fields: [hubId], references: [id])
+  hubId String?     @db.ObjectId
+  hub   BankingHub? @relation(fields: [hubId], references: [id])
 }
 
 // Per-user security preferences (2FA, biometrics, etc.)
 model SecuritySetting {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  twoFAEnabled        Boolean  @default(false)
-  lastPasswordChange  DateTime
-  biometricEnabled    Boolean  @default(false)
-  backupCodes         String[]
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  twoFAEnabled       Boolean  @default(false)
+  lastPasswordChange DateTime
+  biometricEnabled   Boolean  @default(false)
+  backupCodes        String[]
 
   // Relation
-  userId              String   @unique @db.ObjectId
-  user                User     @relation(fields: [userId], references: [id])
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 // Audit log of security-related actions
 model SecurityEvent {
-  id             String            @id @default(auto()) @map("_id") @db.ObjectId
-  eventType      SecurityEventType
-  ip             String?
-  userAgent      String?
-  location       String?           // geo-ip, branch, etc.
-  createdAt      DateTime          @default(now())
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  eventType SecurityEventType
+  ip        String?
+  userAgent String?
+  location  String? // geo-ip, branch, etc.
+  createdAt DateTime          @default(now())
 
   // Relation
-  userId         String            @db.ObjectId
-  user           User              @relation(fields: [userId], references: [id])
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
 }
