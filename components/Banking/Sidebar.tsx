@@ -37,7 +37,7 @@ const MENU = [
     section: 'Menu',
     items: [
       { label: 'Dashboards', icon: <Home size={22} />, href: '/banking' },
-      { label: 'Transaction', icon: <CreditCard size={22} />, href: '/banking/transactions' },
+      { label: 'Transfer', icon: <CreditCard size={22} />, href: '/banking/transactions' },
       { label: 'Transaction History', icon: <History size={22} />, href: '/banking/transaction-history' },
       { label: 'Statistics', icon: <BarChart size={22} />, href: '/banking/statistics' },
     //   { label: 'Analytics', icon: <PieChart size={22} />, href: '/banking/analytics' },
