@@ -76,13 +76,14 @@ export default function ExchangeRatesTicker() {
 
   return (
     <Card className="p-6 bg-[#fafdff] border border-[#e6effa] rounded-2xl mb-6 shadow-sm min-h-[340px]">
-      <div className="flex flex-col md:flex-row md:items-center gap-6 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center gap-6 mb-6 ">
         <div className="flex items-center gap-2">
           <Dropdown
             value={from}
             setValue={setFrom}
             exclude={to}
             label="From"
+            
           />
           <span className="mx-2 text-xl font-bold">→</span>
           <Dropdown
