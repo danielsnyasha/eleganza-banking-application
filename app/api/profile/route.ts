@@ -16,8 +16,6 @@ async function clerkUser() {
   return prisma.user.findUnique({ where: { clerkId } })
 }
 
-/* ensure the caller has **one** USD account.  
-   If none exists we create it with a $500 opening balance.               */
 async function primaryAccount(userId: string) {
   const existing = await prisma.bankAccount.findFirst({ where: { ownerId: userId } })
   if (existing) return existing
@@ -55,7 +53,7 @@ export async function GET() {
     },
     account: {
       number  : acct.accountNumber,
-      balance : acct.balance,
+      balance : acct.balanceCents,
       currency: acct.currency,
     },
   })

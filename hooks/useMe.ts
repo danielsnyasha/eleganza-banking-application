@@ -1,75 +1,49 @@
-/* ------------------------------------------------------------------
-   hooks/useMe.ts – share profile state with use-s-react
------------------------------------------------------------------- */
-'use client'
+'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useS } from 'use-s-react'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseQueryResult,
+  UseMutationResult,
+} from '@tanstack/react-query';
+import { useMeStore, Me } from '@/stores/useMeStore';
 
-export interface Me {
-  [x: string]: any
-  id        : string
-  firstName : string
-  lastName  : string
-  email     : string
-  phone?    : string | null
-  avatarUrl?: string | null
-  address1? : string | null
-  city?     : string | null
-  country?  : string | null
-  kycStatus : 'PENDING' | 'VERIFIED' | 'REJECTED'
-  account   : {
-    number  : string
-    type    : string
-    balance : number
-    currency: string
-    isActive: boolean
-    openedAt: string
-  }
-}
+export function useMe(): UseQueryResult<Me, Error> {
+  const me    = useMeStore((s) => s.me);
+  const setMe = useMeStore((s) => s.setMe);
 
-const KEY = 'me-cache'
-
-/* -------------- read -------------- */
-export function useMe() {
-  const isBrowser = typeof window !== 'undefined'
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [cached, setCached] = isBrowser ? useS<Me | null>(KEY, null, true) : [null, () => {}]
-
-  return useQuery<Me>({
-    queryKey : ['me'],
-    initialData: cached || undefined,
-    queryFn: async () => {
-      const res = await fetch('/api/me')
-      if (!res.ok) throw new Error('profile load failed')
-      const data: Me = await res.json()
-      if (isBrowser) setCached(data)
-      return data
+  return useQuery<Me, Error>({
+    queryKey:    ['me'],
+    initialData: me ?? undefined,
+    queryFn:     async () => {
+      const res = await fetch('/api/me');
+      if (!res.ok) throw new Error('Failed to load profile');
+      const data: Me = await res.json();
+      setMe(data);
+      return data;
     },
     refetchOnWindowFocus: false,
-  })
+  });
 }
 
-/* -------------- write ------------- */
-export function useSaveMe() {
-  const qc = useQueryClient()
-  const isBrowser = typeof window !== 'undefined'
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [, setCached] = isBrowser ? useS<Me | null>(KEY, null, true) : [null, () => {}]
+export function useSaveMe(): UseMutationResult<Me, Error, Partial<Me>> {
+  const qc    = useQueryClient();
+  const setMe = useMeStore((s) => s.setMe);
 
-  return useMutation({
-    mutationFn: async (payload: Partial<Me>) => {
+  return useMutation<Me, Error, Partial<Me>>({
+    mutationFn: async (payload) => {
       const res = await fetch('/api/me', {
-        method : 'PATCH',
-        headers: { 'Content-Type':'application/json' },
-        body   : JSON.stringify(payload),
-      })
-      if (!res.ok) throw new Error('save failed')
-      return res.json() as Promise<{ ok: true; updated: Me }>
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      return res.json() as Promise<Me>;
     },
-    onSuccess: ({ updated }) => {
-      if (isBrowser) setCached(updated)
-      qc.setQueryData(['me'], updated)
+    onSuccess: (data) => {
+      setMe(data);
+      qc.setQueryData(['me'], data);
     },
-  })
+  });
 }

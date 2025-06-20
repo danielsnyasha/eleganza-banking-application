@@ -1,20 +1,24 @@
 /* -----------------------------------------------------------------
    Shared helpers for all TX endpoints
+   File: app/api/tx/_helpers.ts
 ------------------------------------------------------------------*/
 import { prisma } from '@/lib/prisma';
 import { BANK_ACCT } from '@/lib/constants';
 
 /* ---- fee: 0.6 % + 1 USD flat ---------------------------------- */
-export const calcFee = (amt: number) => +(1 + amt * 0.006).toFixed(2);
+export const calcFee = (amt: number) =>
+  +(1 + amt * 0.006).toFixed(2);
 
 /* ---- lookup or throw ------------------------------------------ */
 export async function findAccountOrThrow(accountNumber: string) {
-  const acct = await prisma.bankAccount.findUnique({ where: { accountNumber } });
+  const acct = await prisma.bankAccount.findUnique({
+    where: { accountNumber },
+  });
   if (!acct) throw new Error('account_not_found');
   return acct;
 }
 
-/* ---- bank fee account (guaranteed to exist once at bootstrap) -- */
+/* ---- bank fee account (must exist at bootstrap) -------------- */
 export async function bankAccountId() {
   const bank = await prisma.bankAccount.findUnique({
     where: { accountNumber: BANK_ACCT },

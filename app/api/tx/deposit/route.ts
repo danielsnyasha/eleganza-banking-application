@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction([
     prisma.bankAccount.update({
       where: { id: acct.id },
-      data: { balance: { increment: amount - fee } },
+      data: { balanceCents: { increment: amount - fee } },
     }),
     prisma.bankAccount.update({
       where: { id: await bankAccountId() },
-      data: { balance: { increment: fee } },
+      data: { balanceCents: { increment: fee } },
     }),
   ]);
   return NextResponse.json({ ok: true });

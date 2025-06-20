@@ -1,4 +1,4 @@
-/* prettier-ignore */
+
 'use client'
 
 import { useMe, useSaveMe } from '@/hooks/useMe'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
+import dynamic from 'next/dynamic';
 
 export default function SettingsPage() {
   const { data:me, isLoading } = useMe()

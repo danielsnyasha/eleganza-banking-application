@@ -17,7 +17,7 @@ import {
 }                             from '@/components/ui/select'
 import { Button }             from '@/components/ui/button'
 import CountryFlag            from 'react-country-flag'
-import { useState }           from 'react'
+import { useState, useEffect }from 'react'
 import { toast }              from 'react-toastify'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useS }               from 'use-s-react'
@@ -26,6 +26,18 @@ import RecipientSelect        from './RecipientSelect'
 import ConfirmPinDialog       from './ConfirmPinDialog'
 import { useFxRates }         from '@/hooks/useFxRates'
 import { useMe }              from '@/hooks/useMe'
+
+/* ────────────────────────────  QUICK FIX ──────────────────────────── */
+function useTransferTab() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const tab = useS<'send'|'request'|'deposit'|'withdraw'>(
+    'transfer-tab',
+    'send',
+    true
+  )
+  return mounted ? tab : ['send', () => {}]
+}
 
 /* ─────────────────────────  CONSTANTS  ───────────────────────── */
 export const FX_SYMBOLS = [
@@ -89,9 +101,8 @@ export default function TransferForm() {
   const myBal          = me?.account.balance ?? 0
   const qc             = useQueryClient()
 
-  /* share active tab across components (use-s-react) ---------------------------------- */
-  const [tab,setTab] = useS<'send'|'request'|'deposit'|'withdraw'>(
-    'transfer-tab','send',true)
+  /* share active tab across components ---------------------------------- */
+  const [tab,setTab] = useTransferTab()
 
   /* ---------------- state (Send) ---------------- */
   const [sFrom,setSFrom] = useState<FxCode>('USD')

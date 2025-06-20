@@ -169,24 +169,24 @@ model User {
   email        String    @unique
   phone        String?   @unique
   passwordHash String
-  firstName   String
-  lastName    String
-     // 👇 add the new KYC columns
-  idType      String?
-  idNumber    String?
-  profession  String?
-  dob         DateTime?
-  address1    String?
-  address2    String?
-  city        String?
-  province    String?
-  postalCode  String?
-  country     String?
-  notes       String?
-  kycStatus   KycStatus @default(PENDING)
-  verified    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  firstName    String
+  lastName     String
+  // 👇 add the new KYC columns
+  idType       String?
+  idNumber     String?
+  profession   String?
+  dob          DateTime?
+  address1     String?
+  address2     String?
+  city         String?
+  province     String?
+  postalCode   String?
+  country      String?
+  notes        String?
+  kycStatus    KycStatus @default(PENDING)
+  verified     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
   accounts         BankAccount[]
@@ -236,9 +236,9 @@ model BankingHub {
 model BankAccount {
   id            String       @id @default(auto()) @map("_id") @db.ObjectId
   accountNumber String       @unique
-  type          AccountType
   currency      CurrencyCode
-  balance       Float        @default(0)
+  // store cents (e.g. $1 000 000 → 100000000 cents)
+  balanceCents  BigInt       @default(0)
   openedAt      DateTime     @default(now())
   isActive      Boolean      @default(true)
 

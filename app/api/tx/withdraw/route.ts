@@ -27,17 +27,17 @@ export async function POST(req: NextRequest) {
   });
   const acct = user?.accounts[0];
   if (!acct) return NextResponse.json({ error: 'no_account' }, { status: 400 });
-  if (amount + fee > acct.balance)
+  if (amount + fee > acct.balanceCents)
     return NextResponse.json({ error: 'insufficient' }, { status: 400 });
 
   await prisma.$transaction([
     prisma.bankAccount.update({
       where: { id: acct.id },
-      data: { balance: { decrement: amount + fee } },
+      data: { balanceCents: { decrement: amount + fee } },
     }),
     prisma.bankAccount.update({
       where: { id: await bankAccountId() },
-      data: { balance: { increment: fee } },
+      data: { balanceCents: { increment: fee } },
     }),
   ]);
   return NextResponse.json({ ok: true });
