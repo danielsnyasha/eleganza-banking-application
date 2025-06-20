@@ -53,7 +53,7 @@ export async function GET() {
       account: {
         number:   acct.accountNumber,
         // convert BigInt -> number so JSON.stringify will work
-        balance:  Number(acct.balanceCents),
+        balance:  Number(acct.balanceCents)/100,
         currency: acct.currency,
         isActive: acct.isActive,
         openedAt: acct.openedAt.toISOString(),

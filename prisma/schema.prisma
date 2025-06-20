@@ -238,7 +238,7 @@ model BankAccount {
   accountNumber String       @unique
   currency      CurrencyCode
   // store cents (e.g. $1 000 000 → 100000000 cents)
-  balanceCents  BigInt       @default(0)
+  balanceCents  BigInt       @default(0) @db.Long
   openedAt      DateTime     @default(now())
   isActive      Boolean      @default(true)
 
