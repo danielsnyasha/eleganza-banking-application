@@ -69,6 +69,8 @@
     "node-cache": "^5.1.2",
     "nodemailer": "^7.0.3",
     "prisma": "^6.9.0",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0",
     "react": "^19.0.0",
     "react-big-calendar": "^1.19.4",
     "react-calendar": "^6.0.0",

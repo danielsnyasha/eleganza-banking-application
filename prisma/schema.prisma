@@ -488,3 +488,15 @@ model SecurityEvent {
 
   @@index([userId, createdAt])
 }
+
+//Chat (instant messaging)
+model ChatMessage {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  room       String
+  senderId   String   // Clerk userId
+  senderName String
+  senderAvatar String?
+  text       String?
+  file       String?  // base64 or URL
+  createdAt  DateTime @default(now())
+}
