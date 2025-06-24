@@ -34,21 +34,33 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
 
   // load USD account + a “crypto wallet” in USD for simplicity
-  const usdAcct   = await ensureAccount(user.id, 'USD');
-  const sinkId    = await getBankSinkAccountId();
-
-  // current price
-  const price     = await fetchPrice(cryptoId);
-  const fee       = +(1 + amountFiat * 0.006).toFixed(6);
-  const totalCost = amountFiat + fee;
-  const cryptoAmt = amountFiat / price;
-
-  const costCents = BigInt(Math.round(totalCost * 100));
-  const feeCents  = BigInt(Math.round(fee * 100));
-
-  if (usdAcct.balanceCents < costCents) {
-    return NextResponse.json({ error: 'insufficient_funds' }, { status: 400 });
-  }
+   // load USD account + a “crypto wallet” in USD for simplicity
+   const usdAcct   = await ensureAccount(user.id, 'USD');
+   const sinkId    = await getBankSinkAccountId();
+ 
+   // User must have at least $500 available to transact in crypto (even before this trade)
+   const minBalanceCents = BigInt(500 * 100);
+   if (usdAcct.balanceCents < minBalanceCents) {
+     return NextResponse.json(
+       { error: 'minimum_balance_required', message: 'You need at least $500 in your account to trade crypto.' },
+       { status: 403 }
+     );
+   }
+ 
+   // current price
+   const price     = await fetchPrice(cryptoId);
+   const fee       = +(1 + amountFiat * 0.006).toFixed(6);
+   const totalCost = amountFiat + fee;
+   const cryptoAmt = amountFiat / price;
+ 
+   const costCents = BigInt(Math.round(totalCost * 100));
+   const feeCents  = BigInt(Math.round(fee * 100));
+ 
+   // must have enough for this purchase
+   if (usdAcct.balanceCents < costCents) {
+     return NextResponse.json({ error: 'insufficient_funds' }, { status: 400 });
+   }
+ 
 
   // atomic update + record as an Investment
   await prisma.$transaction([

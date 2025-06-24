@@ -7,8 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ConfirmPinDialog from '@/components/Transfer/ConfirmPinDialog';
 import { toast } from 'react-toastify';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 // -- COINS SUPPORTED
 const COINS = [
@@ -18,14 +26,11 @@ const COINS = [
 type CoinType = typeof COINS[number];
 
 // --- FETCH HOOK FOR HISTORICAL DATA
-import { useQuery } from '@tanstack/react-query';
-
 type HistPoint = { date: string; value: number };
 
 function formatHistory(prices: [number, number][]) {
-  // CoinGecko returns [[timestamp, price],...]
   return prices.map(([ts, price]) => ({
-    date: new Date(ts).toISOString().slice(0,10),
+    date: new Date(ts).toISOString().slice(0, 10),
     value: price
   }));
 }
@@ -34,7 +39,6 @@ function useCryptoHistory(coin: string, vs: string) {
   return useQuery<HistPoint[]>({
     queryKey: ['cryptoHistory', coin, vs],
     queryFn: async () => {
-      // 7-day daily history for chart
       const res = await fetch(
         `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=${vs}&days=7&interval=daily`
       );
@@ -47,7 +51,6 @@ function useCryptoHistory(coin: string, vs: string) {
   });
 }
 
-// -- CURRENT PRICE HOOK
 function useCryptoPrice(coin: string, vs: string) {
   return useQuery<number>({
     queryKey: ['cryptoPrice', coin, vs],
@@ -72,6 +75,10 @@ export default function CryptoPanel() {
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amt, setAmt] = useState('100');
 
+  // Dialog state
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+
   // current price
   const { data: price, isPending, error } = useCryptoPrice(coin, 'usd');
 
@@ -82,7 +89,6 @@ export default function CryptoPanel() {
   // for crypto-crypto, plot the ratio
   const histCrypto = useMemo(() => {
     if (tab !== 'crypto' || !histCoin || !histToCoin) return [];
-    // Ratio: toCoin/USD ÷ coin/USD for each date
     return histCoin.map((point, idx) => {
       const ref = histToCoin[idx];
       return {
@@ -92,18 +98,15 @@ export default function CryptoPanel() {
     });
   }, [tab, histCoin, histToCoin]);
 
-  // fees
   const fee = +(1 + +amt * 0.006).toFixed(4);
 
-  // display numbers
   const total = side === 'buy'
     ? +amt + fee
     : +amt - fee;
 
-  // react-query mutation for trades
   const qc = useQueryClient();
   const mut = useMutation({
-    mutationFn: () => fetch('/api/transfers/crypto', {
+    mutationFn: () => fetch('/api/transfer/crypto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -118,16 +121,21 @@ export default function CryptoPanel() {
       toast.success('Crypto trade executed');
       qc.invalidateQueries({ queryKey: ['me'] });
     },
-    onError: (e: any) => toast.error('Trade failed: ' + e)
+    onError: (e: any) => {
+      if (e?.message === 'You need at least $500 in your account to trade crypto.') {
+        toast.error('Minimum $500 account balance is required to trade crypto.');
+      } else {
+        toast.error('Trade failed: ' + (e?.message ?? e));
+      }
+    }
   });
 
-  // Guards
   if (isPending) return <div>Loading…</div>;
   if (error) return <div>Error: {error.message}</div>;
 
-  // Chart data
   const chartData = tab === 'crypto' ? histCrypto : histCoin ?? [];
 
+  // --- Main Render ---
   return (
     <Card className="p-4 space-y-4 bg-[#fafdff] border-[#e6effa] max-w-2xl mx-auto">
       <h2 className="text-lg font-semibold text-center mb-2">Crypto Trading</h2>
@@ -234,14 +242,48 @@ export default function CryptoPanel() {
         }
       </p>
 
-      <ConfirmPinDialog>
-        <Button
-          className="w-full bg-[#21c87a] hover:bg-[#1eb26c]"
-          onClick={() => mut.mutate()}
-          disabled={mut.isPending}
-        >
-          {mut.isPending ? 'Processing…' : 'Confirm Trade'}
-        </Button>
+      {/* --- ARE YOU SURE DIALOG & PIN DIALOG --- */}
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogTrigger asChild>
+          <Button
+            className="w-full bg-[#21c87a] hover:bg-[#1eb26c]"
+            onClick={() => setShowConfirm(true)}
+            disabled={mut.isPending}
+          >
+            {mut.isPending ? 'Processing…' : 'Confirm Trade'}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+          </DialogHeader>
+          <div>
+            You are about to {side} {amt} {tab === 'crypto' ? (side === 'buy' ? coin : toCoin) : coin} for {tab === 'crypto'
+              ? (side === 'buy'
+                ? `~${(+amt * (chartData.length ? chartData[chartData.length - 1].value : 1)).toFixed(6)} ${toCoin.toUpperCase()}`
+                : `~${(+amt / (chartData.length ? chartData[chartData.length - 1].value : 1)).toFixed(6)} ${coin.toUpperCase()}`
+              )
+              : `$${(+amt + fee).toFixed(2)}`
+            }.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                setShowConfirm(false);
+                setShowPin(true); // Open PIN dialog next
+              }}
+              disabled={mut.isPending}
+            >
+              {mut.isPending ? 'Processing…' : 'Yes, Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN dialog - only opens after Are You Sure */}
+      <ConfirmPinDialog open={showPin} onOpenChange={setShowPin} onConfirm={() => mut.mutate()}>
+        {/* If your ConfirmPinDialog doesn't accept these props, you may need to update it for controlled mode */}
       </ConfirmPinDialog>
     </Card>
   );
