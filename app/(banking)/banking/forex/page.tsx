@@ -1,9 +1,6 @@
-import React from 'react'
+// app/(banking)/finance/page.tsx
+import FinanceDashboard from '@/components/Forex/FinanceDashboard';
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+export default function FinancePage() {
+  return <FinanceDashboard />;
 }
-
-export default page

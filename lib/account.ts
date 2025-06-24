@@ -15,7 +15,7 @@ export async function generateAccountNumber(): Promise<string> {
   }
 }
 
-/** Ensure the user has one primary USD CURRENT account with $500 opening */
+
 export async function ensurePrimaryAccount(user: User) {
   const existing = await prisma.bankAccount.findFirst({
     where: { ownerId: user.id, currency: 'USD', type: 'CURRENT' },
@@ -27,7 +27,7 @@ export async function ensurePrimaryAccount(user: User) {
       accountNumber: await generateAccountNumber(),
       type: 'CURRENT',
       currency: 'USD',
-      balance: 500,                // opening balance
+      balance: 500,           
       ownerId: user.id,
     },
   })

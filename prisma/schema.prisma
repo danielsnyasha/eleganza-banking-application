@@ -171,7 +171,7 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
-  // 👇 add the new KYC columns
+
   idType       String?
   idNumber     String?
   profession   String?
@@ -260,21 +260,20 @@ model BankAccount {
 
 // Plastic or virtual payment card
 model Card {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  cardNumber String      @unique
-  cvvHash    String
-  expiryDate DateTime
-  type       CardType
-  network    CardNetwork
-  status     CardStatus  @default(ACTIVE)
-  issuedAt   DateTime    @default(now())
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  cardNumber   String      @unique
+  cvv          String
+  expiryDate   DateTime
+  type         CardType
+  network      CardNetwork
+  status       CardStatus  @default(ACTIVE)
+  issuedAt     DateTime    @default(now())
 
   // Relations
-  accountId String      @db.ObjectId
-  account   BankAccount @relation(fields: [accountId], references: [id])
-
-  ownerId String @db.ObjectId
-  owner   User   @relation(fields: [ownerId], references: [id])
+  accountId    String      @db.ObjectId
+  account      BankAccount @relation(fields: [accountId], references: [id])
+  ownerId      String      @db.ObjectId
+  owner        User        @relation(fields: [ownerId], references: [id])
 }
 
 // Every financial movement (single-entry view)
