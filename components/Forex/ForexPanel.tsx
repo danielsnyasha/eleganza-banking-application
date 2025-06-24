@@ -51,7 +51,7 @@ export default function ForexPanel() {
   const qc = useQueryClient();
   const mut = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/transfers/forex', {
+      const res = await fetch('/api/transfer/forex', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

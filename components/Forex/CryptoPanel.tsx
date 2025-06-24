@@ -18,14 +18,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
-// -- COINS SUPPORTED
 const COINS = [
   'bitcoin','ethereum','ripple','litecoin','cardano','polkadot',
   'chainlink','dogecoin','stellar','uniswap','solana','bitcoin-cash',
 ] as const;
 type CoinType = typeof COINS[number];
 
-// --- FETCH HOOK FOR HISTORICAL DATA
 type HistPoint = { date: string; value: number };
 
 function formatHistory(prices: [number, number][]) {
@@ -67,7 +65,6 @@ function useCryptoPrice(coin: string, vs: string) {
   });
 }
 
-// ---- PANEL COMPONENT ----
 export default function CryptoPanel() {
   const [tab, setTab] = useState<'fiat' | 'crypto'>('fiat');
   const [coin, setCoin] = useState<CoinType>('bitcoin');
@@ -120,13 +117,10 @@ export default function CryptoPanel() {
     onSuccess: () => {
       toast.success('Crypto trade executed');
       qc.invalidateQueries({ queryKey: ['me'] });
+      setShowPin(false); // Close PIN dialog
     },
     onError: (e: any) => {
-      if (e?.message === 'You need at least $500 in your account to trade crypto.') {
-        toast.error('Minimum $500 account balance is required to trade crypto.');
-      } else {
-        toast.error('Trade failed: ' + (e?.message ?? e));
-      }
+      toast.error('Trade failed: ' + (e?.message ?? e));
     }
   });
 
@@ -135,7 +129,6 @@ export default function CryptoPanel() {
 
   const chartData = tab === 'crypto' ? histCrypto : histCoin ?? [];
 
-  // --- Main Render ---
   return (
     <Card className="p-4 space-y-4 bg-[#fafdff] border-[#e6effa] max-w-2xl mx-auto">
       <h2 className="text-lg font-semibold text-center mb-2">Crypto Trading</h2>
@@ -242,7 +235,7 @@ export default function CryptoPanel() {
         }
       </p>
 
-      {/* --- ARE YOU SURE DIALOG & PIN DIALOG --- */}
+      {/* --- ARE YOU SURE DIALOG --- */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogTrigger asChild>
           <Button
@@ -271,7 +264,7 @@ export default function CryptoPanel() {
             <Button
               onClick={() => {
                 setShowConfirm(false);
-                setShowPin(true); // Open PIN dialog next
+                setShowPin(true); // Show PIN dialog
               }}
               disabled={mut.isPending}
             >
@@ -281,10 +274,32 @@ export default function CryptoPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* PIN dialog - only opens after Are You Sure */}
-      <ConfirmPinDialog open={showPin} onOpenChange={setShowPin} onConfirm={() => mut.mutate()}>
-        {/* If your ConfirmPinDialog doesn't accept these props, you may need to update it for controlled mode */}
-      </ConfirmPinDialog>
+      {/* PIN dialog - shown after confirmation */}
+      {showPin && (
+        <ConfirmPinDialog>
+          {/* You may need to pass a callback/handler as a prop or use context, 
+              depending on your ConfirmPinDialog implementation */}
+          <div>
+            <Button
+              className="w-full mt-3"
+              disabled={mut.isPending}
+              onClick={() => {
+                mut.mutate();
+                // It will close on success via onSuccess in useMutation
+              }}
+            >
+              {mut.isPending ? 'Processing…' : 'Confirm PIN & Execute Trade'}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full mt-2"
+              onClick={() => setShowPin(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </ConfirmPinDialog>
+      )}
     </Card>
   );
 }
