@@ -1,97 +1,93 @@
-// components/chat/ChatWindow.tsx
+/* components/chat/ChatWindow.tsx */
 "use client";
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useRef, useState } from "react";
-import Pusher from "pusher-js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { getPusher } from "@/lib/pusherClient";
+import { chatIdFor } from "@/lib/chatIds";
 import ChatSidebar from "./ChatSidebar";
-import ChatMessage, { ChatMsg } from "./ChatMessage";
 import ChatInput from "./ChatInput";
+import ChatMessage, { ChatMsg } from "./ChatMessage";
 
 export default function ChatWindow() {
-  // Correct hook from Clerk
-  const { isLoaded, isSignedIn, user } = useUser();
-
-  // Guards: only show loading until Clerk is loaded; then sign in prompt if not signed in
-  if (!isLoaded) return <div>Loading…</div>;
-  if (!isSignedIn || !user) return <div>Please sign in to use chat.</div>;
-
+  const { isLoaded, userId } = useAuth();
+  const [peer, setPeer] = useState<{ id: string; firstName: string; lastName: string; avatar?: string }>();
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
-  const [room] = useState("default");
-  const windowRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch history on mount
-  useEffect(() => {
-    fetch("/api/chat/history")
-      .then((r) => r.json())
-      .then((arr) => setMsgs(arr))
-      .catch(() => setMsgs([])); // fallback to empty if error
-  }, []);
+  const chatId = useMemo(() => (peer && userId) ? chatIdFor(userId, peer.id) : null, [peer, userId]);
 
-  // Subscribe Pusher on mount
+  // Load history on chat change
   useEffect(() => {
-    const p = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    if (!chatId) return;
+    (async () => {
+      const res = await fetch(`/api/chat/history?chatId=${chatId}`);
+      setMsgs(await res.json());
+    })();
+  }, [chatId]);
+
+  // Subscribe Pusher channels
+  useEffect(() => {
+    if (!chatId || !userId) return;
+    const p = getPusher();
+
+    const roomCh   = p.subscribe(`chat-${chatId}`);
+    const inboxCh  = p.subscribe(`user-${userId}`);   // 🆕 personal channel
+
+    const handler  = (m: ChatMsg) => setMsgs((arr) => [...arr, m]);
+
+    roomCh.bind("new", handler);
+    inboxCh.bind("inbox", (m: ChatMsg) => {
+      // Only push if we're already in that room
+      if (m.chatId === chatId) handler(m);
     });
-    const channel = p.subscribe("chat");
-    channel.bind("new-message", (msg: ChatMsg) => {
-      setMsgs((m) => [...m, msg]);
-    });
+
     return () => {
-      channel.unbind_all();
-      p.unsubscribe("chat");
-      p.disconnect();
+      roomCh.unbind("new", handler);
+      inboxCh.unbind("inbox", handler);
+      p.unsubscribe(`chat-${chatId}`);
+      p.unsubscribe(`user-${userId}`);
     };
-  }, []);
+  }, [chatId, userId]);
 
-  // Scroll chat to bottom when new message comes in
+  // Scroll down on new message
   useEffect(() => {
-    windowRef.current?.scrollTo(0, windowRef.current.scrollHeight);
+    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
   }, [msgs]);
 
-  // Handle sending message (text and optional file)
-  const send = async ({
-    text,
-    file,
-  }: {
-    text?: string;
-    file?: File;
-  }) => {
-    let fileData: string | undefined = undefined;
-    if (file) {
-      fileData = await new Promise<string>((res) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.readAsDataURL(file);
-      });
-    }
+  const send = async ({ text, file }: { text?: string; file?: File }) => {
+    if (!peer || !userId) return;
+    const file64 = file ? await new Promise<string>((ok) => {
+      const r = new FileReader(); r.onload = () => ok(r.result as string); r.readAsDataURL(file);
+    }) : undefined;
+
     await fetch("/api/chat/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        room,
-        senderId: user.id,
-        senderName: user.fullName,
-        senderAvatar: user.imageUrl, // Clerk v4: user.imageUrl is the correct prop!
-        text,
-        file: fileData,
-      }),
+      body: JSON.stringify({ peerId: peer.id, text, file: file64 }),
     });
   };
 
-  // Chat UI
+  if (!isLoaded) return <div className="p-4">Loading…</div>;
+
   return (
     <div className="flex h-full">
-      <ChatSidebar onSelect={() => {}} />
+      <ChatSidebar meId={userId!} onSelect={setPeer} />
+
       <div className="flex-1 flex flex-col">
-        <div
-          ref={windowRef}
-          className="flex-1 overflow-auto p-4 bg-gray-50"
-        >
+        {/* Header with peer */}
+        <div className="border-b px-4 py-2 font-semibold bg-white">
+          {peer ? `${peer.firstName} ${peer.lastName}` : "Select a user"}
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-auto p-4 bg-gray-50">
           {msgs.map((m) => (
-            <ChatMessage key={m.id} msg={m} me={{ userId: user.id }} />
+            <ChatMessage key={m.id} msg={m} meId={userId!} />
           ))}
         </div>
-        <ChatInput onSend={send} />
+
+        {/* Input */}
+        <ChatInput disabled={!peer} onSend={send} />
       </div>
     </div>
   );

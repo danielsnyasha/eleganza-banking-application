@@ -1,41 +1,45 @@
-// components/chat/ChatMessage.tsx
-"use client";
-import Avatar from "./Avatar";
+'use client';
+import Image from 'next/image';
 
 export interface ChatMsg {
-  userId: any;
-  name: string;
-  avatar: string;
+  chatId: string;
   id: string;
   senderId: string;
   senderName: string;
-  senderAvatar?: string;
+  senderAvatar: string;
   text?: string;
   file?: string;
   createdAt: string;
 }
 
-export default function ChatMessage({
-  msg,
-  me,
-}: {
+interface ChatMessageProps {
   msg: ChatMsg;
-  me: { userId: string };
-}) {
-  const isMe = msg.senderId === me.userId;
+  meId: string;
+}
+
+export default function ChatMessage({ msg, meId }: ChatMessageProps) {
+  const isMe = msg.senderId === meId;
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}>
-      {!isMe && <Avatar src={msg.senderAvatar} size={32} />}
-      <div className="mx-2 max-w-xs">
-        <div className={`p-2 rounded ${isMe ? "bg-green-200" : "bg-gray-200"}`}>
-          {msg.text}
-          {msg.file && <img src={msg.file} className="mt-2 max-w-full" />}
-        </div>
-        <div className="text-xs text-gray-500 text-right">
-          {new Date(msg.createdAt).toLocaleTimeString()}
-        </div>
+    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`}>
+      {!isMe && msg.senderAvatar && (
+        <Image
+          src={msg.senderAvatar}
+          alt={msg.senderName}
+          width={36}
+          height={36}
+          className="rounded-full mr-2"
+        />
+      )}
+      <div
+        className={`max-w-xs px-4 py-2 rounded ${
+          isMe ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'
+        }`}
+      >
+        {msg.text && <p>{msg.text}</p>}
+        {msg.file && (
+          <img src={msg.file} alt="attachment" className="mt-2 max-w-full rounded" />
+        )}
       </div>
-      {isMe && <Avatar src={msg.senderAvatar} size={32} />}
     </div>
   );
 }

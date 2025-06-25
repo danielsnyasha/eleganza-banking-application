@@ -171,7 +171,7 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
-
+  imageUrl String? 
   idType       String?
   idNumber     String?
   profession   String?
@@ -393,9 +393,12 @@ model ForexTrade {
 // Investment products offered by the bank
 model InvestmentProduct {
   id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  slug             String             @unique
   name          String
+  shortDescription String?
   category      InvestmentCategory
   currency      CurrencyCode
+  images           String[] 
   minimumAmount Float
   annualRatePct Float
   termDays      Int?
@@ -492,11 +495,15 @@ model SecurityEvent {
 //Chat (instant messaging)
 model ChatMessage {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatId      String   // `${min(senderId,receiverId)}_${max(...)}` – deterministic
   room       String
   senderId   String   // Clerk userId
   senderName String
+  receiverId String 
   senderAvatar String?
   text       String?
   file       String?  // base64 or URL
   createdAt  DateTime @default(now())
+
+  @@index([chatId, createdAt])
 }

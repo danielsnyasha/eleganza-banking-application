@@ -1,15 +1,17 @@
-// app/inbox/page.tsx
 "use client";
 import ChatWindow from "@/components/Chat/ChatWindow";
-import { useAuth } from "@clerk/nextjs";
-
+import { useUser } from "@clerk/nextjs";
 
 export default function InboxPage() {
-  const { isLoaded, user } = useAuth();
-  if (!isLoaded || !user) return <div>Loading…</div>;
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  // Only load if Clerk is ready AND user is signed in
+  if (!isLoaded) return <div>Loading…</div>;
+  if (!isSignedIn || !user) return <div>Not signed in</div>;
+
   return (
     <div className="h-screen">
-      <ChatWindow />
+      <ChatWindow user={user} />
     </div>
   );
 }
