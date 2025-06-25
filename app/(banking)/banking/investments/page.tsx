@@ -1,9 +1,6 @@
-import React from 'react'
+// /app/(banking)/banking/investments/page.tsx
+import InvestmentsGrid from '@/components/Investments/InvestmentsGrid';
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+export default function InvestmentsPage() {
+  return <InvestmentsGrid />;
 }
-
-export default page
