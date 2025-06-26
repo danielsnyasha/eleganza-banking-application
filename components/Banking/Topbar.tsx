@@ -9,16 +9,15 @@ import {
   CalendarDays,
   Mail,
   Settings,
+  Shield,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 
 // Actual mapping for topbar
-const topbarLabels: Record<
-  string,
-  { label: string; subtitle: string }
-> = {
+const topbarLabels: Record<string, { label: string; subtitle: string }> = {
   "/banking": {
     label: "Dashboard",
     subtitle: "Let's check your update today...",
@@ -67,6 +66,11 @@ const topbarLabels: Record<
     label: "Inbox",
     subtitle: "See your latest notifications and messages",
   },
+  // ➜ NEW
+  "/admin-portal": {
+    label: "Admin Portal",
+    subtitle: "Administrative controls",
+  },
 };
 
 export default function Topbar() {
@@ -75,33 +79,24 @@ export default function Topbar() {
   const pathname = usePathname();
 
   // Clean path for lookup
-  const cleanPath =
-    (pathname?.replace(/\/$/, "") || "/banking").toLowerCase();
-  const topbarData =
-    topbarLabels[cleanPath] || topbarLabels["/banking"];
+  const cleanPath = (pathname?.replace(/\/$/, "") || "/banking").toLowerCase();
+  const topbarData = topbarLabels[cleanPath] || topbarLabels["/banking"];
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-[#e6effa] bg-[#fafdff] w-full">
       <div className="flex items-center gap-5 flex-1 min-w-0">
         <div className="flex items-center gap-3 min-w-[180px]">
-          {/* Uncomment and adjust your logo if needed */}
-          {/* <Image
-            src="/eleganza_transparent_img.png"
-            width={44}
-            height={44}
-            alt="Eleganza"
-            className="object-contain"
-            priority
-          /> */}
+          {/* Logo placeholder */}
+          {/* <Image ... /> */}
           <div className="flex flex-col ml-10">
             <span className="hidden sm:inline text-[22px] font-bold text-[#02152b]">
               {topbarData.label}
             </span>
-            <p className="text-xs text-yellow-400">
-              {topbarData.subtitle}
-            </p>
+            <p className="text-xs text-yellow-400">{topbarData.subtitle}</p>
           </div>
         </div>
+
+        {/* search */}
         <form
           className="flex-1 ml-3"
           onSubmit={(e) => {
@@ -119,56 +114,35 @@ export default function Topbar() {
         </form>
       </div>
 
+      {/* right-side icons */}
       <div className="flex items-center gap-2 ml-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Calendar"
-        >
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Calendar">
           <CalendarDays className="w-6 h-6 text-[#0056B6]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Mail"
-        >
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Mail">
           <Mail className="w-6 h-6 text-[#0056B6]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Notifications"
-        >
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Notifications">
           <Bell className="w-6 h-6 text-[#0056B6]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Settings"
-        >
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Settings">
           <Settings className="w-6 h-6 text-[#0056B6]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Toggle theme"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
+        {/* Theme toggle */}
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Toggle theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
           <SunMoon className="w-6 h-6 text-[#0056B6]" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-[#e8f4ff] transition"
-          aria-label="Account"
-        >
+        {/* Account */}
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition" aria-label="Account">
           <UserCircle2 className="w-8 h-8 text-[#0056B6]" />
         </Button>
+
+        {/* ➜ NEW admin-portal button */}
+        <Link href="/admin-portal" aria-label="Admin portal">
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-[#e8f4ff] transition">
+            <Shield className="w-6 h-6 text-[#0056B6]" />
+          </Button>
+        </Link>
       </div>
     </header>
   );

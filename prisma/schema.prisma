@@ -393,12 +393,13 @@ model ForexTrade {
 // Investment products offered by the bank
 model InvestmentProduct {
   id            String             @id @default(auto()) @map("_id") @db.ObjectId
-  slug             String             @unique
+  slug             String?             @unique
   name          String
   shortDescription String?
   category      InvestmentCategory
   currency      CurrencyCode
   images           String[] 
+  maxValue        Float?  @default(0)  
   minimumAmount Float
   annualRatePct Float
   termDays      Int?
@@ -417,6 +418,7 @@ model Investment {
   maturityDate DateTime?
   status       InvestmentStatus @default(OPEN)
   createdAt    DateTime         @default(now())
+
 
   // Relations
   userId String @db.ObjectId
