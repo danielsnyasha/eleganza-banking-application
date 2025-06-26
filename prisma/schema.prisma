@@ -431,6 +431,27 @@ model Investment {
   transaction   Transaction? @relation(fields: [transactionId], references: [id])
 }
 
+model InvestmentApplication {
+  id             String   @id @default(uuid()) @map("_id")
+  userId         String
+  slug           String
+  amount         Float
+  currency       String
+  risk           String
+  experience     String
+  goal           String
+  horizon        String
+  name           String
+  surname        String
+  email          String
+  phone          String
+  status         String   @default("pending")
+  notes          String?  // admin or user notes
+  submittedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+
 // Company / SME banking solutions (one business may own many accounts)
 model BusinessAccount {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -447,6 +468,8 @@ model BusinessAccount {
   accounts    BankAccount[]
   teamMembers TeamMember[]
 }
+
+
 
 // Staff & privilege mapping (for internal back-office or business teams)
 model TeamMember {

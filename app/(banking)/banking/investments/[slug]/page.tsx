@@ -1,19 +1,29 @@
-import Image from 'next/image';
+/* app/(banking)/banking/investments/[slug]/page.tsx */
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import HeroCarousel from '@/components/Investments/HeroCarousel';
 import { InvestmentProductDTO } from '@/types/investment';
-import GalleryModal from '@/components/Investments/GalleryModal';
+import Link from 'next/link';
 
-export const revalidate = 60; // static-plus-ISR
+export const revalidate = 60;
+
+/* --- helper -------------------------------------------------- */
+async function buildUrl(path: string) {
+  const hdrs = await headers();                      // await → TS OK
+  const host = hdrs.get('host');
+  const proto = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${proto}://${host}${path}`;
+}
 
 async function getProduct(slug: string): Promise<InvestmentProductDTO | null> {
-  const res = await fetch(
-    `/api/investment-products/${slug}`,
-    { next: { revalidate: 60 } }
-  );
+  const res = await fetch(await buildUrl(`/api/investment-products/${slug}`), {
+    next: { revalidate: 60 },
+  });
   if (!res.ok) return null;
   return res.json();
 }
 
+/* --- page component ------------------------------------------ */
 export default async function ProductDetail({
   params,
 }: {
@@ -23,45 +33,73 @@ export default async function ProductDetail({
   if (!product) return notFound();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-20">
-      {/* hero */}
-      <div className="relative h-[260px] sm:h-[340px] rounded-xl overflow-hidden mb-6 shadow">
-        <Image
-          src={product.images[0] ?? '/placeholder.jpg'}
-          alt={product.name}
-          fill
-          className="object-cover"
+    <div className="max-w-4xl mx-auto px-4 pb-24 space-y-12">
+      <HeroCarousel
+        images={product.images.length ? product.images : ['/placeholder.jpg']}
+      />
+
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold">{product.name}</h1>
+        <p className="text-neutral-600 leading-relaxed">
+          {product.shortDescription}
+        </p>
+      </header>
+
+      <section className="border rounded-xl overflow-hidden">
+        <FactRow
+          label="Category"
+          value={product.category.replaceAll('_', ' ')}
         />
-        {product.images.length > 1 && <GalleryModal images={product.images} />}
-      </div>
-
-      {/* title */}
-      <h1 className="text-2xl font-semibold">{product.name}</h1>
-      <p className="text-neutral-500">{product.shortDescription}</p>
-
-      {/* investment facts */}
-      <div className="mt-6 border rounded-xl">
-        <FactRow label="Minimum deposit" value={`${product.currency} ${product.minimumAmount.toLocaleString()}`} />
+        <FactRow label="Currency" value={product.currency} />
+        <FactRow
+          label="Minimum deposit"
+          value={`${product.currency} ${product.minimumAmount.toLocaleString()}`}
+        />
+        {product.maxValue !== undefined && (
+          <FactRow
+            label="Maximum value"
+            value={`${product.currency} ${product.maxValue.toLocaleString()}`}
+          />
+        )}
         <FactRow label="ROI" value={`${product.annualRatePct}%`} />
         {product.termDays && (
           <FactRow label="Term" value={`${product.termDays} days`} />
         )}
-      </div>
+      </section>
 
-      <button className="mt-8 w-full py-3 rounded-full font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500">
-        Apply now
-      </button>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Why invest?</h2>
+        <p className="text-neutral-700 leading-relaxed">
+          {product.shortDescription}{' '}
+          This opportunity offers attractive yields while preserving capital.
+          Funds are allocated to carefully vetted projects managed by our
+          in-house investment team, providing transparent reporting, strict
+          risk controls, and quarterly performance updates.
+        </p>
+        <ul className="list-disc list-inside text-neutral-700 space-y-1">
+          <li>Low minimum entry point lets you diversify</li>
+          <li>Fixed ROI locked for the full term</li>
+          <li>24-hour liquidity window after maturity</li>
+        </ul>
+      </section>
+
+      <Link href={`/banking/investments/${product.slug}/apply`} className="block">
+  <button className="mx-auto block w-full rounded-full py-3 font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:opacity-90 transition">
+    Apply now
+  </button>
+</Link>
     </div>
   );
 }
 
-/* ----------------- */
-
+/* --- small helper -------------------------------------------- */
 function FactRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between px-4 py-3 odd:bg-neutral-50 text-sm">
+    <div className="flex justify-between px-4 py-4 odd:bg-neutral-50 text-sm">
       <span className="text-neutral-600">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="font-medium truncate max-w-[60%] text-right">
+        {value}
+      </span>
     </div>
   );
 }

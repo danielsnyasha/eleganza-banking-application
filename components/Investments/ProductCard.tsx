@@ -44,8 +44,8 @@ export default function ProductCard({ product }: { product: InvestmentProductDTO
 
         {/* action */}
         <Link
-          href={`/investments/${slug}`}
-          className="mt-4 inline-block rounded-full w-full py-2 text-center text-white font-medium bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 transition"
+          href={`/banking/investments/${slug}`}
+          className="mt-4 inline-block rounded-full w-full py-2 text-center text-white font-medium bg-gradient-to-r from-purple-500 to-blue-500 hover:opacity-90 transition"
         >
           View details
         </Link>
