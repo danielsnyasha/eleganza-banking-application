@@ -204,6 +204,25 @@ model User {
   // InvestmentApplication InvestmentApplication[]
 }
 
+/// prisma/schema.prisma   (append just before the closing brace)
+model LoanProduct {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug            String   @unique
+  name            String
+  shortDescription String?
+  purpose         String?      // e.g. “Vehicle”, “Home”, “Education”
+  currency        CurrencyCode
+  maxAmount       Float
+  minAmount       Float
+  annualRatePct   Float        // flat or headline nominal
+  termMonths      Int
+  feePct          Float?       // optional once‑off origination
+  images          String[]
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 // Token store (email / SMS verification, password reset, etc.)
 model VerificationToken {
   id         String                @id @default(auto()) @map("_id") @db.ObjectId

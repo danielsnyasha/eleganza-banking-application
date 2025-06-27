@@ -80,6 +80,7 @@ export const navItems: NavItem[] = [
     label: 'Loans',
     icon: BadgeDollarSign,
     children: [
+      { label: 'Products', href: '/admin-portal/loans/products', icon: CreditCard },
       { label: 'Applications', href: '/admin-portal/loans/applications', icon: BadgeDollarSign },
       { label: 'Portfolio', href: '/admin-portal/loans/portfolio', icon: FileBarChart },
       { label: 'Collections', href: '/admin-portal/loans/collections', icon: FileText },
