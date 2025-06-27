@@ -2,35 +2,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { toast } from 'react-toastify';
+import { z } from 'zod';
+
 import ApplyStepper from '@/components/Investments/ApplyStepper';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'react-toastify';
+import { useWallet } from '@/hooks/useWallet';
+
+interface ProductLite {
+  minimumAmount: number;
+  currency: string;
+}
 
 const labels = ['Details', 'Amount', 'Questions', 'Terms'];
 
 export default function ApplyPage() {
-  const router = useRouter();
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const { slug } = useParams<{ slug: string }>();
+  const router   = useRouter();
   const { user } = useUser();
+  const { data: wallet } = useWallet();
 
-  /* -------- product info (min amount) -------- */
-  const [minDeposit, setMinDeposit] = useState<number | null>(null);
+  /* ---------- fetch product min ---------- */
+  const [product, setProduct] = useState<ProductLite | null>(null);
   useEffect(() => {
     fetch(`/api/investment-products/${slug}`)
       .then((r) => r.json())
-      .then((p) => setMinDeposit(p.minimumAmount))
-      .catch(() => setMinDeposit(0));
+      .then((d: ProductLite) => setProduct(d))
+      .catch(() => toast.error('Failed to load product details'));
   }, [slug]);
 
-  const availableBalance = 2134.98; // TODO: fetch real balance
+  /* ---------- balance calc ---------- */
+  const zarAccounts = wallet?.accounts.filter(
+    (a) => a.currency === 'ZAR' && a.isActive
+  ) ?? [];
+  const available =
+    zarAccounts.length
+      ? zarAccounts.reduce((s, a) => s + a.balance, 0)
+      : (wallet?.accounts.find((a) => a.isActive)?.balance ?? 0);
 
-  /* -------- state for each step -------- */
+  /* ---------- state ---------- */
   const [step, setStep] = useState(0);
   const [amount, setAmount] = useState('');
   const [risk, setRisk] = useState('');
@@ -40,9 +55,20 @@ export default function ApplyPage() {
   const [agree, setAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const parsedAmount = parseFloat(amount || '0');
+  /* ---------- derived amount error ---------- */
+  const amtNum = parseFloat(amount.trim());
+  const minReq = product?.minimumAmount ?? 0;
+
+  let amountError = '';
+  if (!amount.trim()) amountError = 'Amount is required';
+  else if (isNaN(amtNum) || amtNum <= 0) amountError = 'Enter a valid amount';
+  else if (amtNum < minReq)
+    amountError = `Minimum is ZAR ${minReq.toLocaleString()}`;
+  else if (amtNum > available)
+    amountError = 'Amount exceeds available balance';
 
   function next() {
+    if (step === 1 && amountError) return;
     if (step < 3) setStep(step + 1);
   }
   function back() {
@@ -50,25 +76,35 @@ export default function ApplyPage() {
   }
 
   async function submit() {
+    /* defensive Zod check as well */
+    const schema = z.number()
+      .min(minReq, `Minimum is ${minReq}`)
+      .max(available, 'Exceeds balance');
+    const result = schema.safeParse(amtNum);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+
     setSubmitting(true);
 
     const res = await fetch('/api/investments/applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userId: user?.id,
+        userId:   user?.id,
         slug,
-        amount: parsedAmount,
+        amount:   amtNum,
         currency: 'ZAR',
         risk,
         experience,
         goal,
         horizon,
-        name: user?.firstName,
-        surname: user?.lastName,
-        email: user?.emailAddresses[0]?.emailAddress,
-        phone: user?.primaryPhoneNumber?.phoneNumber,
-        notes: '',
+        name:     user?.firstName,
+        surname:  user?.lastName,
+        email:    user?.emailAddresses[0]?.emailAddress,
+        phone:    user?.primaryPhoneNumber?.phoneNumber,
+        notes:    '',
       }),
     });
 
@@ -78,33 +114,19 @@ export default function ApplyPage() {
       return;
     }
 
-    let seconds = 3;
-    const id = toast.success(`Application submitted! Redirecting in ${seconds}…`, {
+    /* success toast + redirect countdown */
+    let s = 3;
+    const id = toast.success(`Application submitted! Redirecting in ${s}…`, {
       autoClose: false,
       closeOnClick: false,
       draggable: false,
     });
-
-    const interval = setInterval(() => {
-      seconds -= 1;
-      if (seconds > 0) {
-        toast.update(id, {
-          render: `Application submitted! Redirecting in ${seconds}…`,
-        });
-      } else {
-        clearInterval(interval);
-        toast.dismiss(id);
-        router.push('/banking/investments');
-      }
+    const t = setInterval(() => {
+      s -= 1;
+      if (s) toast.update(id, { render: `Application submitted! Redirecting in ${s}…` });
+      else { clearInterval(t); toast.dismiss(id); router.push('/banking/investments'); }
     }, 1000);
   }
-
-  /* ---- validation helpers ---- */
-  const amountInvalid =
-    !amount ||
-    parsedAmount <= 0 ||
-    (minDeposit !== null && parsedAmount < minDeposit) ||
-    parsedAmount > availableBalance;
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10 space-y-8">
@@ -118,70 +140,48 @@ export default function ApplyPage() {
       {step === 0 && (
         <div className="space-y-4">
           <Input disabled defaultValue={user?.firstName ?? ''} placeholder="Name" />
-          <Input disabled defaultValue={user?.lastName ?? ''} placeholder="Surname" />
-          <Input
-            disabled
-            defaultValue={user?.primaryPhoneNumber?.phoneNumber ?? ''}
-            placeholder="Phone"
-          />
-          <Input
-            disabled
-            defaultValue={user?.emailAddresses[0]?.emailAddress ?? ''}
-            placeholder="Email"
-          />
+          <Input disabled defaultValue={user?.lastName ?? ''}  placeholder="Surname" />
+          <Input disabled defaultValue={user?.primaryPhoneNumber?.phoneNumber ?? ''} placeholder="Phone" />
+          <Input disabled defaultValue={user?.emailAddresses[0]?.emailAddress ?? ''}  placeholder="Email" />
         </div>
       )}
 
       {step === 1 && (
         <div className="space-y-4">
           <p className="text-sm text-neutral-600">
-            Available balance:&nbsp;<strong>ZAR {availableBalance.toLocaleString()}</strong>
+            Available balance:&nbsp;
+            <strong>
+              ZAR&nbsp;{available.toLocaleString(undefined,{minimumFractionDigits:2})}
+            </strong>
           </p>
-          {minDeposit !== null && (
+          {product && (
             <p className="text-sm text-neutral-600">
-              Minimum deposit:&nbsp;<strong>ZAR {minDeposit.toLocaleString()}</strong>
+              Minimum investment:&nbsp;
+              <strong>ZAR&nbsp;{product.minimumAmount.toLocaleString()}</strong>
             </p>
           )}
           <Input
-            type="text"
+            type="number"
             placeholder="Enter amount"
             value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/\s+/g, ''))}
+            onChange={(e) => setAmount(e.target.value)}
           />
-          {amountInvalid && step === 1 && amount && (
-            <p className="text-xs text-red-600">
-              Amount must be ≥ minimum and ≤ available balance
-            </p>
+          {amountError && (
+            <p className="text-xs text-red-600">{amountError}</p>
           )}
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-6">
-          <Question
-            label="Your investment experience"
-            value={experience}
-            onChange={setExperience}
-            options={['New to investing', 'Some experience', 'Experienced investor']}
-          />
-          <Question
-            label="Your risk tolerance"
-            value={risk}
-            onChange={setRisk}
-            options={['Low', 'Moderate', 'High']}
-          />
-          <Question
-            label="Primary goal"
-            value={goal}
-            onChange={setGoal}
-            options={['Preserve capital', 'Generate income', 'Substantial growth']}
-          />
-          <Question
-            label="Planned holding period"
-            value={horizon}
-            onChange={setHorizon}
-            options={['<2 years', '2-5 years', '>5 years']}
-          />
+          <Question label="Your investment experience" value={experience} onChange={setExperience}
+            options={['New to investing','Some experience','Experienced investor']} />
+          <Question label="Your risk tolerance" value={risk} onChange={setRisk}
+            options={['Low','Moderate','High']} />
+          <Question label="Primary goal" value={goal} onChange={setGoal}
+            options={['Preserve capital','Generate income','Substantial growth']} />
+          <Question label="Planned holding period" value={horizon} onChange={setHorizon}
+            options={['<2 years','2-5 years','>5 years']} />
         </div>
       )}
 
@@ -189,10 +189,7 @@ export default function ApplyPage() {
         <div className="space-y-4">
           <p className="text-sm leading-relaxed">
             By investing you confirm you have read and agree to the&nbsp;
-            <a href="#" className="underline">
-              Terms & Conditions
-            </a>
-            .
+            <a href="#" className="underline">Terms & Conditions</a>.
           </p>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={agree} onCheckedChange={(v) => setAgree(v === true)} /> I agree
@@ -203,12 +200,16 @@ export default function ApplyPage() {
       {/* ---------- ACTIONS ---------- */}
       <div className="flex justify-between mt-8">
         {step > 0 && (
-          <Button variant="ghost" onClick={back}>
-            Back
-          </Button>
+          <Button variant="ghost" onClick={back}>Back</Button>
         )}
         {step < 3 && (
-          <Button onClick={next} disabled={(step === 1 && amountInvalid) || minDeposit === null}>
+          <Button
+            onClick={next}
+            disabled={
+              (step === 1 && !!amountError) ||
+              (step === 1 && !amount.trim())
+            }
+          >
             Next
           </Button>
         )}
@@ -226,26 +227,17 @@ export default function ApplyPage() {
   );
 }
 
-/* ---- helper for radio questions ---- */
+/* helper radio group */
 function Question({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
+  label, value, onChange, options,
+}: { label:string; value:string; onChange:(v:string)=>void; options:string[] }) {
   return (
     <div className="space-y-2">
       <p className="font-medium">{label}</p>
       <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
         {options.map((o) => (
           <label key={o} className="flex items-center gap-2">
-            <RadioGroupItem value={o} />
-            <span className="text-sm">{o}</span>
+            <RadioGroupItem value={o} /> <span className="text-sm">{o}</span>
           </label>
         ))}
       </RadioGroup>

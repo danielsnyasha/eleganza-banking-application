@@ -1,48 +1,48 @@
+/* app/api/admin-portal/investments/applications/route.ts
+   GET  → list all investment applications (+ product info)                */
+// app/api/admin-portal/investments/applications/route.ts
 
-//app/api/investments/applications/route.ts
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request) {
-  const {
-    userId,
-    slug,
-    amount,
-    currency,
-    risk,
-    experience,
-    goal,
-    horizon,
-    name,
-    surname,
-    email,
-    phone,
-    notes,
-  } = await req.json();
+/* ---------- GET  /api/admin-portal/investments/applications ---------- */
+export async function GET(_req: NextRequest) {
+  const apps = await prisma.investmentApplication.findMany({
+    orderBy: { submittedAt: 'desc' },
 
-  // Basic presence check – expand as needed
-  if (!userId || !slug || !amount || !currency) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-  }
+    /* Only join what really exists: product. */
+    include: {
+      product: {
+        select: { name: true, annualRatePct: true, minimumAmount: true },
+      },
+    },
+  });
+  return NextResponse.json(apps);
+}
 
-  const app = await prisma.investmentApplication.create({
-    data: {
-      userId,
-      slug,
-      amount,
-      currency,
-      risk,
-      experience,
-      goal,
-      horizon,
-      name,
-      surname,
-      email,
-      phone,
-      notes,
+/* ---------- PATCH /api/admin-portal/investments/applications/[id] ---------- */
+export async function PATCH(
+  _req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const body   = await _req.json() as { status: 'approved' | 'cancelled' };
+  const status = body.status;
+
+  const updated = await prisma.investmentApplication.update({
+    where:  { id: params.id },
+    data:   { status },
+    select: {
+      id: true,
+      status: true,
+      submittedAt: true,
+      amount: true,
+      currency: true,
+      name: true,
+      surname: true,
+      email: true,
+      product: { select: { name: true } },
     },
   });
 
-  return NextResponse.json({ ok: true, id: app.id }, { status: 201 });
+  return NextResponse.json(updated);
 }

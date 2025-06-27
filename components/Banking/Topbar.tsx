@@ -59,7 +59,7 @@ const topbarLabels: Record<string, { label: string; subtitle: string }> = {
     subtitle: "See upcoming financial events",
   },
   "/banking/my-banks": {
-    label: "My Banks",
+    label: "Loans",
     subtitle: "Manage your linked bank accounts",
   },
   "/banking/inbox": {

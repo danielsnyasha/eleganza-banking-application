@@ -1,6 +1,8 @@
 import { InvestmentCategory, CurrencyCode } from '@prisma/client';
 
 export interface InvestmentProductDTO {
+  isActive: any;
+  isActive: any;
   maxValue: any;
   id: string;
   slug: string;

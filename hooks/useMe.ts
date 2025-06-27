@@ -47,3 +47,5 @@ export function useSaveMe(): UseMutationResult<Me, Error, Partial<Me>> {
     },
   });
 }
+
+export type { Me };

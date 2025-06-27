@@ -27,6 +27,7 @@ import {
   BarChart3,
   PieChart,
   Award,
+  ListChecks,   // ← new icon for applications
 } from 'lucide-react';
 
 /** Sidebar tree */
@@ -40,13 +41,9 @@ export interface NavItem {
 /** All admin-portal sections */
 export const navItems: NavItem[] = [
   /* ───────── DASHBOARD ───────── */
-  {
-    label: 'Overview',
-    href: '/admin-portal',
-    icon: LayoutDashboard,
-  },
+  { label: 'Overview', href: '/admin-portal', icon: LayoutDashboard },
 
-  /* ───────── BANKING BLOCK ───────── */
+  /* ───────── BANKING BLOCK ───── */
   {
     label: 'Banking',
     icon: Banknote,
@@ -99,7 +96,7 @@ export const navItems: NavItem[] = [
     ],
   },
 
-  /* ───────── INVESTMENTS BLOCK ───── */
+  /* ───────── INVESTMENTS BLOCK ── */
   {
     label: 'Investments',
     icon: LineChart,
@@ -107,10 +104,12 @@ export const navItems: NavItem[] = [
       { label: 'Products', href: '/admin-portal/investments/products', icon: LineChart },
       { label: 'Properties', href: '/admin-portal/investments/properties', icon: Building2 },
       { label: 'Portfolios', href: '/admin-portal/investments/portfolios', icon: FileBarChart },
+      /* NEW → Applications list & approvals */
+      { label: 'Applications', href: '/admin-portal/investments/applications', icon: ListChecks },
     ],
   },
 
-  /* ───────── ANALYTICS / INSIGHTS ── */
+  /* ───────── ANALYTICS / INSIGHTS ─ */
   {
     label: 'Analytics',
     icon: BarChart3,
@@ -122,7 +121,7 @@ export const navItems: NavItem[] = [
     ],
   },
 
-  /* ───────── USERS & COMPLIANCE ──── */
+  /* ───────── USERS & COMPLIANCE ── */
   {
     label: 'Users',
     icon: Users,
@@ -143,7 +142,7 @@ export const navItems: NavItem[] = [
     ],
   },
 
-  /* ───────── REPORTS & SUPPORT ───── */
+  /* ───────── REPORTS & SUPPORT ─── */
   {
     label: 'Reports',
     icon: FileBarChart,
@@ -162,15 +161,7 @@ export const navItems: NavItem[] = [
     ],
   },
 
-  /* ───────── SETTINGS / SYSTEM ───── */
-  {
-    label: 'Settings',
-    href: '/admin-portal/settings',
-    icon: Settings,
-  },
-  {
-    label: 'System Logs',
-    href: '/admin-portal/system/logs',
-    icon: TerminalSquare,
-  },
+  /* ───────── SETTINGS / SYSTEM ─── */
+  { label: 'Settings',   href: '/admin-portal/settings',    icon: Settings },
+  { label: 'System Logs', href: '/admin-portal/system/logs', icon: TerminalSquare },
 ];

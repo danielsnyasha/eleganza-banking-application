@@ -200,6 +200,8 @@ model User {
   tokens           VerificationToken[]
   beneficiaries    Beneficiary[]
   businessAccounts BusinessAccount[]
+
+  // InvestmentApplication InvestmentApplication[]
 }
 
 // Token store (email / SMS verification, password reset, etc.)
@@ -407,6 +409,8 @@ model InvestmentProduct {
   createdAt     DateTime           @default(now())
 
   investments Investment[]
+
+  InvestmentApplication InvestmentApplication[]
 }
 
 // Individual customer deal
@@ -432,9 +436,10 @@ model Investment {
 }
 
 model InvestmentApplication {
-  id             String   @id @default(uuid()) @map("_id")
-  userId         String
+  id        String   @id @default(uuid()) @map("_id")
+  userId    String
   slug           String
+  productId String? @db.ObjectId
   amount         Float
   currency       String
   risk           String
@@ -449,6 +454,8 @@ model InvestmentApplication {
   notes          String?  // admin or user notes
   submittedAt    DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  product     InvestmentProduct? @relation(fields: [productId], references: [id])
 }
 
 
