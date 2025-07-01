@@ -221,6 +221,27 @@ model LoanProduct {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  LoanApplication LoanApplication[]
+}
+
+model LoanApplication {
+  id          String   @id @default(uuid()) @map("_id")
+  userId      String
+  slug        String
+  productId   String?  @db.ObjectId
+  amount      Float
+  currency    String
+  purpose     String
+  incomeProof String?   // URL to doc, optional
+  status      String   @default("pending") // pending | approved | cancelled
+  name        String
+  surname     String
+  email       String
+  phone       String
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product     LoanProduct? @relation(fields: [productId], references: [id])
 }
 
 // Token store (email / SMS verification, password reset, etc.)

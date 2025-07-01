@@ -1,9 +1,12 @@
-import React from 'react'
+/* app/(banking)/banking/my-banks/page.tsx */
+import LoansGrid from '@/components/Loans/LoansGrid'
 
-const page = () => {
+export const dynamic = 'force-dynamic'   // always fresh
+
+export default function LoansPage () {
   return (
-    <div>page</div>
+    <div className="max-w-6xl mx-auto px-4 pb-20">
+      <LoansGrid />
+    </div>
   )
 }
-
-export default page
