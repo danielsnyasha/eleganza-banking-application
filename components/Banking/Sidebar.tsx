@@ -55,6 +55,10 @@
    
          { label: 'Forex',                 icon: <Wallet    size={22} />,  href: '/banking/forex' },
          { label: 'Loans',              icon: <Banknote  size={22} />,  href: '/banking/my-banks' },
+         { label: 'Loan Applications',
+          icon: <Clock size={22} />,
+          href: '/banking/loan-applications' },
+        
          { label: 'My Wallet',             icon: <Wallet    size={22} />,  href: '/banking/my-wallet' },
          { label: 'Inbox',                 icon: <Inbox     size={22} />,  href: '/banking/inbox' },
          { label: 'Team',                  icon: <UserCog   size={22} />,  href: '/banking/team' },

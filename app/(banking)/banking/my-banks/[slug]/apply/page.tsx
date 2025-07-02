@@ -122,6 +122,7 @@
            amount    : fee,
            currency  : loan?.currency,
            note      : `Loan application fee for ${slug}`,
+           userId    : user.id,
          }),
        });
        if (!feeRes.ok) {

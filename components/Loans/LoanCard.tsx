@@ -1,61 +1,75 @@
 /* components/Loans/LoanCard.tsx
-   – identical look-&-feel to InvestmentCard                              */
+   – card inside /banking/loan-applications            */
    'use client';
 
-   import Image from 'next/image';
-   import Link  from 'next/link';
-   import { Button } from '@/components/ui/button';
-   import type { LoanProductDTO } from '@/types/loan';
+   import Image         from 'next/image';
+   import { Badge }     from '@/components/ui/badge';
+   import { Button }    from '@/components/ui/button';
+   import ProjectionModal from './ProjectionModal';   
+   import { useState }  from 'react';
+   import type { LoanAppDTO } from '@/types/loan';
    
-   export default function LoanCard({ loan }: { loan: LoanProductDTO }) {
+   export default function LoanCard({ app }: { app: LoanAppDTO }) {
+     const [open, setOpen] = useState(false);
+   
+     /* hero image ---------------------------------------------------- */
+     const imgSrc =
+       app.product?.images?.[0] ??
+       'https://placehold.co/600x400?text=No+Image';
+   
+     /* ui helpers ----------------------------------------------------- */
+     const isApproved = app.status === 'approved';
+     const btnCls = isApproved
+       ? 'bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:opacity-90'
+       : 'bg-muted text-muted-foreground cursor-not-allowed';
+   
+     /* render --------------------------------------------------------- */
      return (
-       <div className="group rounded-xl border bg-[#fafdff] overflow-hidden shadow-sm
-                       hover:shadow-lg transition flex flex-col">
-         {/* hero image -------------------------------------------------- */}
-         <div className="relative h-40 w-full overflow-hidden">
-           <Image
-             src={loan.images[0] ?? '/placeholder.jpg'}
-             alt={loan.name}
-             fill
-             className="object-cover transition-transform duration-500 group-hover:scale-105"
-             sizes="(max-width: 640px) 100vw, 33vw"
-           />
-           {/* subtle overlay */}
-           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-         </div>
+       <>
+         <div className="rounded-xl border overflow-hidden flex flex-col bg-[#fafdff]">
+           {/* image */}
+           <div className="relative h-40 w-full">
+             <Image
+               src={imgSrc}
+               alt={app.product?.name ?? 'Loan product'}
+               fill
+               className="object-cover"
+               unoptimized={imgSrc.startsWith('http')}
+             />
+             <div className="absolute inset-0 bg-gradient-to-t from-black/40" />
+           </div>
    
-         {/* body -------------------------------------------------------- */}
-         <div className="p-4 flex flex-col gap-1 flex-1">
-           <h3 className="font-semibold text-[#02152b]">{loan.name}</h3>
+           {/* body */}
+           <div className="p-4 flex-1 flex flex-col gap-3">
+             <p className="font-medium text-[#02152b]">
+               {app.currency} {app.amount.toLocaleString()}
+             </p>
    
-           <p className="text-xs text-muted-foreground line-clamp-2">
-             {loan.shortDescription}
-           </p>
+             <Badge
+               variant={
+                 app.status === 'approved'
+                   ? 'default'
+                   : app.status === 'cancelled'
+                   ? 'destructive'
+                   : 'secondary'
+               }
+             >
+               {app.status}
+             </Badge>
    
-           <div className="mt-auto pt-3 text-sm">
-             <span className="font-medium text-[#0056B6]">
-               {loan.currency} {loan.minAmount.toLocaleString()}
-             </span>{' '}
-             <span className="text-xs text-gray-500">(min)</span>
+             <Button
+               disabled={!isApproved}
+               className={btnCls}
+               onClick={() => setOpen(true)}
+             >
+               View projection
+             </Button>
            </div>
          </div>
    
-         {/* footer with APPLY button ----------------------------------- */}
-         <div className="p-4 pt-0">
-           <Link
-             href={`/banking/my-banks/${loan.slug}/apply`}
-             className="block w-full"
-           >
-             <Button
-               className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white
-                          hover:opacity-90"
-               size="sm"
-             >
-               Apply
-             </Button>
-           </Link>
-         </div>
-       </div>
+         {/* graph modal mounts regardless of status */}
+         <ProjectionModal open={open} onClose={() => setOpen(false)} app={app} />
+       </>
      );
    }
    
