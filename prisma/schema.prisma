@@ -196,7 +196,7 @@ model User {
   investments      Investment[]
   securityEvents   SecurityEvent[]
   securityConfig   SecuritySetting?
-  teamMembers      TeamMember[]
+
   tokens           VerificationToken[]
   beneficiaries    Beneficiary[]
   businessAccounts BusinessAccount[]
@@ -271,7 +271,7 @@ model BankingHub {
   updatedAt DateTime @updatedAt
 
   accounts BankAccount[]
-  staff    TeamMember[]
+  // staff    TeamMember[]
 }
 
 // Retail or business bank account (multicurrency supported)
@@ -345,6 +345,27 @@ model Transaction {
   paymentTransfer PaymentTransfer?
   ledgerEntries   LedgerEntry[]
 }
+
+/// --- ONLY the TeamMember model needs adjusting ---
+model TeamMember {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  /// made the string fields *optional* so legacy nulls don’t break reads
+  firstName  String?
+  lastName   String?
+  email      String?  @unique
+  role       TeamRole
+  title      String?
+  avatar     String?
+  isActive   Boolean  @default(true)
+  joinedAt   DateTime @default(now())
+
+  /// if you really need hub / business IDs keep them, otherwise remove
+  hubId      String?  @db.ObjectId
+  businessId String?  @db.ObjectId
+}
+
+
 
 // Double-entry/ledger snapshot (so we can reconstruct balances quickly)
 model LedgerEntry {
@@ -513,27 +534,10 @@ model BusinessAccount {
   owner   User   @relation(fields: [ownerId], references: [id])
 
   accounts    BankAccount[]
-  teamMembers TeamMember[]
+  // teamMembers TeamMember[]
 }
 
 
-
-// Staff & privilege mapping (for internal back-office or business teams)
-model TeamMember {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  role     TeamRole
-  joinedAt DateTime @default(now())
-
-  // Relations
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
-
-  businessId String?          @db.ObjectId
-  business   BusinessAccount? @relation(fields: [businessId], references: [id])
-
-  hubId String?     @db.ObjectId
-  hub   BankingHub? @relation(fields: [hubId], references: [id])
-}
 
 // Per-user security preferences (2FA, biometrics, etc.)
 model SecuritySetting {

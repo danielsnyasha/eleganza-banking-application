@@ -1,3 +1,5 @@
+//lib/cloudinary.ts
+
 export async function uploadToCloudinary(file: File): Promise<string> {
     const form = new FormData();
     form.append('file', file);

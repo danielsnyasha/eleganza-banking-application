@@ -1,27 +1,16 @@
 // components/Loans/LoansGrid.tsx
-import { prisma } from '@/lib/prisma';
-import LoanCard from './LoanCard';
+import { prisma }            from '@/lib/prisma';
+import LoanProductCard       from './LoanProductCard';   // ⬅️ use the product-oriented card
 import type { LoanProductDTO } from '@/types/loan';
 
 export default async function LoansGrid() {
-  // Direct database call, no HTTP needed
   const data: LoanProductDTO[] = await prisma.loanProduct.findMany({
-    where: { isActive: true },
+    where:   { isActive: true },
     orderBy: { createdAt: 'desc' },
     select: {
-      id: true,
-      slug: true,
-      name: true,
-      shortDescription: true,
-      purpose: true,
-      currency: true,
-      minAmount: true,
-      maxAmount: true,
-      annualRatePct: true,
-      termMonths: true,
-      feePct: true,
-      images: true,
-      createdAt: true, // ← this line was missing, added now
+      id:true, slug:true, name:true, shortDescription:true, purpose:true,
+      currency:true, minAmount:true, maxAmount:true, annualRatePct:true,
+      termMonths:true, feePct:true, images:true, createdAt:true,
     },
   });
 
@@ -41,8 +30,8 @@ export default async function LoansGrid() {
         <p className="text-center text-muted-foreground">No loan products.</p>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.map((loan) => (
-            <LoanCard key={loan.id} loan={loan} />
+          {data.map((product) => (
+            <LoanProductCard key={product.id} product={product} />
           ))}
         </div>
       )}

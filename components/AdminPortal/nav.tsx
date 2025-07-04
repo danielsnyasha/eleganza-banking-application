@@ -133,6 +133,9 @@ export const navItems: NavItem[] = [
     ],
   },
 
+  /* ───────── TEAM (NEW) ───────── */
+  { label: 'Team', href: '/admin-portal/team', icon: Users },
+
   {
     label: 'Compliance',
     icon: ShieldCheck,

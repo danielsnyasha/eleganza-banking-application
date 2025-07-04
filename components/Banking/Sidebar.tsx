@@ -72,15 +72,15 @@
        section: 'Help',
        items: [
          { label: 'Help & Support', icon: <HelpCircle size={22} />, href: '/banking/help-support' },
-         { label: 'Support',        icon: <HelpCircle size={22} />, href: '/banking/support' },
-         { label: 'Setting',        icon: <Settings   size={22} />, href: '/banking/settings' },
+        //  { label: 'Support',        icon: <HelpCircle size={22} />, href: '/banking/support' },
+         { label: 'Settings',        icon: <Settings   size={22} />, href: '/banking/settings' },
        ],
      },
      {
        section: 'Others',
        items: [
-         { label: 'Coming Soon', icon: <Hourglass   size={22} />, href: '/coming-soon' },
-         { label: '404',         icon: <MailWarning size={22} />, href: '/404' },
+         { label: 'Coming Soon', icon: <Hourglass   size={22} />, href: '/banking/coming-soon' },
+         { label: 'Errors',         icon: <MailWarning size={22} />, href: '/banking/404' },
          { label: 'Logout',      icon: <LogOut      size={22} />, href: '/logout', danger: true },
        ],
      },
