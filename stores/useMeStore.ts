@@ -13,6 +13,7 @@ export interface BankAccount {
 }
 
 export interface Me {
+  imageUrl: string;
   id:        string;
   firstName: string;
   lastName:  string;

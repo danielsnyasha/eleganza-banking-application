@@ -1,32 +1,73 @@
-'use client'
-import { useRef } from 'react'
-import Image    from 'next/image'
-import { Button } from '@/components/ui/button'
+'use client';
+
+import { useRef, useState } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export default function AvatarUploader({
-  url, onChange,
-}:{ url:string|null, onChange:(u:string)=>void }) {
-  const fileRef = useRef<HTMLInputElement>(null)
+  url,
+  onChange,
+  disabled,
+}: {
+  url: string | null;
+  onChange: (url: string) => void;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  async function pick() { fileRef.current?.click() }
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    const local = URL.createObjectURL(f)
-    onChange(local)          // in real app you’d upload then set returned URL
+  async function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      const uploaded = await uploadToCloudinary(file);
+      onChange(uploaded);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
   }
 
+  /** If `url` is falsy we render a placeholder — we **never**
+      pass an empty string to <Image src>. */
+  const safeSrc = url || '/avatar-placeholder.png';
+
   return (
-    <>
-      <div className="relative h-24 w-24 rounded-full overflow-hidden">
-        <Image src={url ?? '/avatar-placeholder.png'} fill alt="avatar" className="object-cover"/>
-        <Button
-          size="icon" variant="secondary"
-          className="absolute bottom-1 right-1 h-7 w-7"
-          onClick={pick}
-        >✎</Button>
+    <div className="flex items-center gap-5">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[#e0e8f4] bg-muted">
+        <Image
+          src={safeSrc}
+          alt="Profile avatar"
+          fill
+          sizes="80px"
+          className="object-cover"
+          priority
+        />
       </div>
-      <input ref={fileRef} hidden type="file" accept="image/*" onChange={onFile}/>
-    </>
-  )
+
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled || busy}
+        >
+          {busy ? 'Uploading…' : 'Change Photo'}
+        </Button>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleSelect}
+          disabled={disabled || busy}
+        />
+      </div>
+    </div>
+  );
 }
