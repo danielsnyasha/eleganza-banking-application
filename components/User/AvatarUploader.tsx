@@ -31,7 +31,7 @@ export default function AvatarUploader({
     <div className="flex items-center gap-5">
       <div className="w-20 h-20 rounded-full overflow-hidden border border-[#e0e8f4] bg-muted">
         <img
-          src={url && url.trim() !== '' ? url : '/default-avatar.png'}
+          src={url && url.trim() !== '' ? url : '/avatar-placeholder.png'}
           alt="Profile"
           className="object-cover w-full h-full"
         />
