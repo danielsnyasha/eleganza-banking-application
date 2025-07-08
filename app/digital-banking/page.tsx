@@ -82,12 +82,12 @@ export default function DigitalBankingPage(): JSX.Element {
         <section className="mb-14">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 space-y-4">
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-2 text-green-800">
                 {features.map((feature, idx) => (
                   <Button
                     key={feature.title}
                     variant={selectedFeature === idx ? "destructive" : "ghost"}
-                    className={`transition-all px-4 rounded-full`}
+                    className={`transition-all px-4  rounded-full`}
                     onClick={() => setSelectedFeature(idx)}
                   >
                     {feature.title}
@@ -170,7 +170,7 @@ export default function DigitalBankingPage(): JSX.Element {
           <span className="text-white text-xl mb-2 font-medium">
             Ready to experience the future of banking?
           </span>
-          <Button size="lg" className="bg-blue-400 text-emerald-700 hover:bg-emerald-100 rounded-full px-8 font-bold shadow transition-all mt-2">
+          <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-100 rounded-full px-8 font-bold shadow transition-all mt-2">
             Get Started with Eleganza
           </Button>
         </motion.div>
