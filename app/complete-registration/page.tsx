@@ -1,11 +1,9 @@
-import React from 'react'
+// app/complete-registration/page.tsx
 
-const page = () => {
-  return (
-    <div>
-      
-    </div>
-  )
+'use client';
+
+import Verification from '@/components/verification/Verification';
+
+export default function CompleteRegistrationPage() {
+  return <Verification />;
 }
-
-export default page

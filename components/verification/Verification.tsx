@@ -26,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm, ControllerRenderProps } from 'react-hook-form';
 import * as z from 'zod';
-import { useVerificationStatus, useOnboard } from '@/hooks/useVerification';
+import { useOnboard } from '@/hooks/useVerification';
 import { create } from 'zustand';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -34,11 +34,11 @@ import 'react-toastify/dist/ReactToastify.css';
 /* -------------------------------------------------------------------------- */
 /* Zustand store for the verification phase                                   */
 /* -------------------------------------------------------------------------- */
-type Phase = 'checking' | 'fill' | 'reviewing' | 'success';
+type Phase = 'fill' | 'reviewing' | 'success';
 type State = { phase: Phase; setPhase: (p: Phase) => void };
 
 const useVerificationStore = create<State>((set) => ({
-  phase: 'checking',
+  phase: 'fill',
   setPhase: (p) => set({ phase: p }),
 }));
 
@@ -67,32 +67,14 @@ type FormValues = z.infer<typeof Schema>;
 /* -------------------------------------------------------------------------- */
 /* Component                                                                  */
 /* -------------------------------------------------------------------------- */
-export default function Verification() {
+export default function CompleteRegistration() {
   const { user, isLoaded } = useUser();
   const router             = useRouter();
 
-  /* TanStack hooks */
-  const { data, isLoading } = useVerificationStatus();   // <-- { submitted: boolean }
-  const onboard             = useOnboard();
+  const onboard            = useOnboard();
 
   /* Phase from zustand */
   const { phase, setPhase } = useVerificationStore();
-
-  /* -------- timers ------------------------------------------------------- */
-  const [checkingSec , setCheckingSec ] = useState(5);   // initial 5-s gate
-  const [reviewingSec, setReviewingSec] = useState(10);  // 10-s banner
-
-  useEffect(() => {
-    if (phase !== 'checking') return;
-    const t = setInterval(() => setCheckingSec((s) => Math.max(s - 1, 0)), 1_000);
-    return () => clearInterval(t);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== 'reviewing') return;
-    const t = setInterval(() => setReviewingSec((s) => Math.max(s - 1, 0)), 1_000);
-    return () => clearInterval(t);
-  }, [phase]);
 
   /* -------------------------------- form init ---------------------------- */
   const form = useForm<FormValues>({
@@ -121,35 +103,24 @@ export default function Verification() {
     }
   }, [isLoaded, user, form]);
 
-  /* -------------------------------- check status ------------------------- */
-  useEffect(() => {
-    if (!isLoaded || isLoading) return;
-    if (checkingSec > 0) return;              // wait for 5-s gate
-
-    /* 🎯 NEW LOGIC → back-end “submitted” flag decides everything */
-    if (data?.submitted) {
-      router.replace('/banking');
-    } else {
-      setPhase('fill');
-    }
-  }, [isLoaded, isLoading, data, router, setPhase, checkingSec]);
-
   /* -------------------------------- submit ------------------------------- */
   async function onSubmit(values: FormValues) {
     try {
       setPhase('reviewing');
-      setReviewingSec(10);
       await onboard.mutateAsync(values);
 
       toast.success('Details received — our automated checks are running.', {
-        autoClose: 4_000,
+        autoClose: 3000,
       });
 
-      await new Promise((r) => setTimeout(r, 10_000));   // show full 10-s banner
-      setPhase('success');
+      // Short pause then redirect to verification for checks
+      setTimeout(() => {
+        setPhase('success');
+        setTimeout(() => {
+          router.replace('/verification');
+        }, 2200);
+      }, 2200);
 
-      await new Promise((r) => setTimeout(r, 5_000));    // short green-tick pause
-      router.replace('/banking');
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -165,21 +136,15 @@ export default function Verification() {
   /* ---------------------------------------------------------------------- */
   /* UI phases                                                               */
   /* ---------------------------------------------------------------------- */
-  if (phase === 'checking' || isLoading) {
-    return (
-      <BannerLoader text={`🔍 Checking your session & profile … ${checkingSec}s`} />
-    );
-  }
-
   if (phase === 'reviewing') {
     return (
-      <BannerLoader text={`⚙️ Account being quickly verified … ${reviewingSec}s`} />
+      <BannerLoader text="⚙️ Submitting your details for verification…" />
     );
   }
 
   if (phase === 'success') {
     return (
-      <BannerSuccess text="✅ Profile submitted — you’re being redirected to Eleganza Banking…" />
+      <BannerSuccess text="✅ Profile submitted — now verifying your details…" />
     );
   }
 
