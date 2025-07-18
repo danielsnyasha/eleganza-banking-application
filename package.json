@@ -2,12 +2,14 @@
   "name": "eleganza-banking-application",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
+"scripts": {
+  "dev": "next dev --turbopack",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "postinstall": "prisma generate"
+},
+
   "dependencies": {
     "@clerk/nextjs": "^6.21.0",
     "@data-ui/sparkline": "^0.0.84",
