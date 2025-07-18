@@ -1,4 +1,7 @@
-'use client'
+'use client';
+
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 import ExchangeRatesTicker from '@/components/Transfer/ExchangeRatesTicker'
 import TransferForm        from '@/components/Transfer/TransferForm'
@@ -10,8 +13,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-/* ──────────────────────────────────────────────────────────── */
-/* Gradient banner (reuse elsewhere if you like)               */
 function TransferBanner() {
   return (
     <Card
@@ -41,17 +42,11 @@ function TransferBanner() {
   )
 }
 
-/* ──────────────────────────────────────────────────────────── */
-/* Main page                                                   */
 export default function TransferPage() {
   return (
     <section className="w-full max-w-[840px] mx-auto flex flex-col gap-6 px-4 py-8">
       <TransferBanner />
-
-      {/* live FX ticker */}
       <ExchangeRatesTicker />
-
-      {/* transfer / request / deposit form */}
       <TransferForm />
     </section>
   )

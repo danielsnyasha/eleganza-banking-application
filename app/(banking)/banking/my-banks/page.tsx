@@ -1,7 +1,8 @@
 /* app/(banking)/banking/my-banks/page.tsx */
+'use client'
 import LoansGrid from '@/components/Loans/LoansGrid'
 
-export const dynamic = 'force-dynamic'   // always fresh
+
 
 export default function LoansPage () {
   return (

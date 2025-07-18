@@ -72,7 +72,7 @@
        section: 'Help',
        items: [
          { label: 'Help & Support', icon: <HelpCircle size={22} />, href: '/banking/help-support' },
-         { label: 'Settings',      icon: <Settings   size={22} />, href: '/banking/settings' },
+        //  { label: 'Settings',      icon: <Settings   size={22} />, href: '/banking/settings' },
        ],
      },
      {

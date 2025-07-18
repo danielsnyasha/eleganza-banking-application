@@ -1,13 +1,7 @@
-/* Server Component – fetches nothing, simply mounts the client grid */
-import dynamic from 'next/dynamic';
+/* app/(banking)/banking/my-banks/my-applications/page.tsx */
+'use client';
 
-export const revalidate = 60;               // same re‑valid window as investments
-
-/* ⚡  avoids Chart.js being bundled in the initial HTML */
-const MyLoanApplications = dynamic(
-  () => import('@/components/Loans/MyLoanApplications'),
-  { ssr: false },
-);
+import MyLoanApplications from '@/components/Loans/MyLoanApplications';
 
 export default function MyLoanAppsPage() {
   return (
@@ -15,7 +9,7 @@ export default function MyLoanAppsPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">My Loan Applications</h1>
         <p className="text-muted-foreground">
-          Track your pending and approved loans, plus year‑by‑year projections.
+          Track your pending and approved loans, plus year-by-year projections.
         </p>
       </header>
 
